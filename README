@@ -1,0 +1,5 @@
+CMD scripts
+ads.cmd        List alternate data streams.
+ed.cmd         An EDLIN style text editor.
+ipv6.cmd       IPv4/IPv6 translation routines.
+parseArgs.cmd  Demonstrates a simply configured command line parsing routine. 
