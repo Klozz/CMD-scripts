@@ -1,5 +1,18 @@
 CMD scripts
-ads.cmd        List alternate data streams.
-ed.cmd         An EDLIN style text editor.
-ipv6.cmd       IPv4/IPv6 translation routines.
-parseArgs.cmd  Demonstrates a simply configured command line parsing routine. 
+ads.cmd            List alternate data streams.
+apm.cmd            Arbitrary precision math.
+body.cmd           Print the portion of a file which begins and ends with the specified text.
+DecodeUID.cmd      Decode a UID.
+draw.cmd           Draw color ASCII art files.
+ed.cmd             An EDLIN style text editor.
+FileAge.cmd        Lists files with an age matching the given criteria.
+getVolumeRoot.cmd  Find the mount point of a volume by name.
+ipv6.cmd           IPv4/IPv6 translation routines.
+MathToy.cmd        Commnd line math exercises.
+parseArgs.cmd      Demonstrates a simply configured command line parsing routine. 
+PrepMessage.cmd    Prepare an Internet message body with contained scripts.
+RecycleBin.cmd     Enumerates the recycle bin, deletes items in it, or restores items to their original location.
+replace.cmd        Replace text in strings.
+rudeGraph.cmd      A rudimentary graph demonstration.
+Wrap_Demo.cmd      A console word wrap routine.
+xmlParse.cmd       Push and pull parse XML files.
