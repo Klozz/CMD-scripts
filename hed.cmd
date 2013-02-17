@@ -1,8 +1,9 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: hed.cmd
 :: An EDLIN style hex editor.
-:: From the desk of Frank P. Westlake, 2013-02-14.
+:: From the desk of Frank P. Westlake, 2013-02-17.
 :: Provides a quick and simple means of editing files from the command line.
+:: Get Updated script at: <https://github.com/FrankWestlake/CMD-scripts/blob/master/hed.cmd>
 @Echo OFF
 SetLocal EnableExtensions EnableDelayedExpansion
 Set "ME=%~n0"
