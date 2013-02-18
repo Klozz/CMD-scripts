@@ -1,9 +1,12 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: hed.cmd
 :: An EDLIN style hex editor.
-:: From the desk of Frank P. Westlake, 2013-02-17.
-:: Provides a quick and simple means of editing files from the command line.
-:: Get Updated script at: <https://github.com/FrankWestlake/CMD-scripts/blob/master/hed.cmd>
+:: From the desk of Frank P. Westlake, 2013-02-18.
+:: Provides a quick and simple means of editing binary files from the command line.
+:: Get Updated script at: <https://github.com/FrankWestlake/CMD-scripts/blob/master/hed.cmd >
+:: HISTORY:
+:: 2013-02-17 Original.
+:: 2013-02-18 Some cleanup.
 @Echo OFF
 SetLocal EnableExtensions EnableDelayedExpansion
 Set "ME=%~n0"
@@ -12,15 +15,12 @@ Set "MY=%TEMP%\%~n0.%RANDOM%"
 If "%~1" EQU ""   Call :commandLineHelp & Goto :EOF
 If "%~1" EQU "/?" Call :commandLineHelp & Goto :EOF
 :: CONFIGURATION
-REM Set "ATTR=/A:09"                & REM Color of line numbers when listed.
 Set "commandListPrompt=true"    & REM Show [?ACD...]: 
 REM Set "commandListSpaced=true"    & REM Show [? A C D ... ]: 
 Set "warnUnsaved=true"          & REM If quitting, warn if changes are unsaved.
 REM Set "comspecArguments=/U /V:ON" & REM Default arguments for thw C command.
 Set "CLIP=%SystemRoot%\System32\clip.exe"
 :: Messages for language translation.
-::Set "msg.mktemp=Writing the working copy: %work%"
-Set "msg.mktemp="
 Set "msg.append=Append: "
 Set "msg.insert=Insert: "
 Set "msg.enter=Enter bytes as hex pairs, i.e.: AF 01 DD"
@@ -28,10 +28,11 @@ Set "msg.clipedit=Paste the clipboard into the console, edit the line, then pres
 Set "msg.edit=Edit the following line below it then press ENTER."
 Set "msg.unsaved=The altered file has not been saved. Exit and lose changes?"
 Set "msg.howsave=Use command W to save changes."
-Set "msg.overwritePrompt=Overwrite [Y/N]: "
-Set "msg.exitPrompt=Exit [Y/N]: "
+Set "yes=Y"
+Set "no=N"
+Set "msg.overwritePrompt=Overwrite [%yes%/%no%]: "
+Set "msg.exitPrompt=Exit [%yes%/%no%]: "
 Set "msg.newFile=New file: %file%"
-Set "msg.noClip=The application %CLIP% is not found."
 :: More translation should be done to documentation in the command subroutines.
 :: To simplify the task of translating the subroutine documentation all of the
 :: lines which  begin with :%mode%-command? can be moved to here -- their
@@ -332,7 +333,7 @@ Goto :EOF
 :HEX-E? into the console for editing, otherwise you may copy the line
 :HEX-E? which is printed above the prompt.
 :HEX-E? New bytes are entered as hex pairs, i.e.: 65 0D 0A
-:HEX-E? Example: E 3
+:HEX-E? Example: E 0x3
 If "%~1" EQU "" (Call :commandError %0 & Goto :EOF)
 SetLocal EnableExtensions EnableDelayedExpansion
 Set /A "byte=%~1, range.low=byte - (byte %% 16)"
@@ -379,7 +380,7 @@ Goto :EOF
 :HEX-I <offset>: Insert new bytes to the file.
 :HEX-I? Insert new bytes to the file beginning at offset.
 :HEX-I? New bytes are entered as hex pairs, i.e.: 65 0D 0A
-:HEX-I? Example: I 5
+:HEX-I? Example: I 0x5
 If "%~1" EQU "" (Call :commandError %0 & Goto :EOF)
 SetLocal EnableExtensions EnableDelayedExpansion
 Set /A "byte=%~1"
@@ -470,9 +471,10 @@ Goto :EOF
 :HEX-N? Copies the working copy to a new file. The new file will
 :HEX-N? be the destination for all subsequent writes.
 :HEX-N? Example: N newName.txt
-Set "ok=Y"
-(FindStr "^"<"%~f1">NUL:) 2>NUL: && Set /P "ok=Overwrite %~f1? [Y/N]: "<CON:
-If /I "%ok%" EQU "Y" TYPE "%Work%">"%~f1" && (
+Set "ok=%yes%"
+REM (FindStr "^"<"%~f1">NUL:) 2>NUL: && Set /P "ok=Overwrite %~f1? [Y/N]: "<CON:
+(FindStr "^"<"%~f1">NUL:) 2>NUL: && Set /P "ok=!msg.overwrite!"<CON:
+If /I "%ok%" EQU "%yes%" TYPE "%Work%">"%~f1" && (
   Set "dirty="
   Set "File=%~f1"
 )
@@ -481,14 +483,14 @@ Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :HEX-Q: Quit.
-:HEX-Q? Parameter 1 may be the character "Y" to bypass the prompt.
-:HEX-Q? Example: Q Y
+:HEX-Q? Parameter 1 may be the character "%yes%" to bypass the prompt.
+:HEX-Q? Example: Q %yes%
 If DEFINED warnUnsaved (
   If DEFINED dirty (
-    If /I "%~1" NEQ "Y" (
+    If /I "%~1" NEQ "%yes%" (
       Echo;%msg.unsaved%
       Set /P "ok=%msg.exitPrompt%"<CON:
-      If /I "!ok!" NEQ "Y" (
+      If /I "!ok!" NEQ "%yes%" (
         Echo;%msg.howsave%
         Goto :EOF
       )
@@ -525,13 +527,13 @@ Goto :EOF
 :HEX-W? Copies the working copy back to the original file. This is the
 :HEX-W? only way that the original file can be written to.
 :HEX-W? Example: W
-Set "ok=N"
-If /I "%~1" EQU "Y" (
+Set "ok=%no%"
+If /I "%~1" EQU "%yes%" (
   TYPE "%Work%">"%File%"
   Set "dirty="
 ) Else (
   Set /P "ok=%msg.overwritePrompt%"<CON:
-  If /I "!ok!" EQU "Y" (
+  If /I "!ok!" EQU "%yes%" (
     TYPE "%Work%">"%File%"
     Set "dirty="
   )
