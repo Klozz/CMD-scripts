@@ -1,12 +1,13 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: hed.cmd
 :: An EDLIN style hex editor.
-:: From the desk of Frank P. Westlake, 2013-02-18.
+:: From the desk of Frank P. Westlake, 2013-02-19.
 :: Provides a quick and simple means of editing binary files from the command line.
 :: Get Updated script at: <https://github.com/FrankWestlake/CMD-scripts/blob/master/hed.cmd >
 :: HISTORY:
 :: 2013-02-17 Original.
 :: 2013-02-18 Some cleanup.
+:: 2013-02-19 Optimization.
 @Echo OFF
 SetLocal EnableExtensions EnableDelayedExpansion
 Set "ME=%~n0"
@@ -120,7 +121,7 @@ For /F "delims=:" %%a in (
 Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :dumpHex
-CertUtil -f -encodeHex "%work%" "%work%.hex" %~1 >NUL: 2>&1
+CertUtil -f -encodeHex "%work%" "%work%.hex%~1" %~1 >NUL: 2>&1
 Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :rebuild
@@ -234,7 +235,7 @@ Goto :EOF
 :HEX-?: Show a summary of all commands or help for a specific command.
 ::?: 
 Echo Separate commands with semicolon: command ; command; command
-For /F "delims=" %%a in ('TYPE %~f0^|FindStr /B /I /C:":%mode%-"^|SORT') Do (
+For /F "delims=" %%a in ('FindStr /B /I /C:":%mode%-" %MESELF%^|SORT') Do (
   Set "line=%%a"
   Set "line=!line:*-=!"
   If "!line:~1,1!" NEQ "?" Echo;!line!
@@ -252,8 +253,8 @@ Call :dumpHex 12
 Echo;!msg.enter!
 Set /P "bytes=!msg.append!"
 Echo;
-If DEFINED bytes Set /P "=!bytes!"<NUL: >>"%work%.hex"
-certUtil -f -decodeHex "!work!.hex"   "!work!"  12 >NUL: 2>&1
+If DEFINED bytes Set /P "=!bytes!"<NUL: >>"%work%.hex12"
+certUtil -f -decodeHex "!work!.hex12"   "!work!"  12 >NUL: 2>&1
 Call :dumpHex
 EndLocal
 Set "dirty=1"
@@ -287,7 +288,7 @@ SetLocal EnableExtensions EnableDelayedExpansion
 Call :getRange %*
 If EXIST "!Work!.raw" Erase "!Work!.raw"
 Set "inBlock="
-For /F "tokens=1*" %%a in ('FindStr "^" "%Work%.hex"') Do (
+For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
   Set /A "line=0x%%a"
   Set "raw=%%b"
   If DEFINED raw Set "raw=!raw:~0,48!"
@@ -338,7 +339,7 @@ If "%~1" EQU "" (Call :commandError %0 & Goto :EOF)
 SetLocal EnableExtensions EnableDelayedExpansion
 Set /A "byte=%~1, range.low=byte - (byte %% 16)"
 TYPE NUL:>"!Work!.raw"
-For /F "tokens=1*" %%a in ('FindStr "^" "%Work%.hex"') Do (
+For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
   Set /A "line=0x%%a"
   Set "raw=%%b"
   If DEFINED raw Set "raw=!raw:~0,48!"
@@ -392,7 +393,7 @@ For %%a in ("%work%") Do (
 )
 Call :getRange %byte%
 If EXIST "!Work!.raw" Erase "!Work!.raw"
-For /F "tokens=1*" %%a in ('FindStr "^" "%Work%.hex"') Do (
+For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
   Set /A "line=0x%%a"
   Set "raw=%%b"
   If DEFINED raw Set "raw=!raw:~0,48!"
@@ -451,7 +452,7 @@ For /F "tokens=1,2 delims=-" %%a in ("%*") Do (
 )
 If NOT DEFINED range.high Set "range.high=%range.low%"
 Set /A "range.low=%range.low% - (%range.low% %% 16), range.high=%range.high%"
-For /F "delims=" %%a in ('FindStr "^" "%Work%.hex"') Do (
+For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
   Set /A "line=0x%%a" 2>NUL:
   If !line! GTR %range.high% Goto :break
   If !line! GEQ %range.low% Echo;%%a
@@ -463,7 +464,7 @@ Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :HEX-M: List the file through MORE.
 ::M?
-FindStr /N "^" "%Work%.hex"|MORE
+MORE/E "%Work%.hex"
 Goto :EOF 
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
