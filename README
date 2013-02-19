@@ -13,6 +13,7 @@ ed.cmd               An EDLIN style text editor.
 FileAge.cmd          Lists files with an age matching the given criteria.
 FormatNumber.cmd     A subroutine which formats numbers with commas.
 getVolumeRoot.cmd    Find the mount point of a volume by name.
+hed.cmd              An EDLIN style hex editor.
 hex.cmd              Prints a hex dump of a file or stream.
 ipv6.cmd             IPv4/IPv6 translation routines.
 MathToy.cmd          Commnd line math exercises.
