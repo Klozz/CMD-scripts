@@ -1,10 +1,11 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: hed.cmd
 :: An EDLIN style hex editor.
-:: From the desk of Frank P. Westlake, 2013-02-19.
+:: From the desk of Frank P. Westlake, 2013-02-21.
 :: Provides a quick and simple means of editing binary files from the command line.
 :: Get Updated script at: <https://github.com/FrankWestlake/CMD-scripts/blob/master/hed.cmd >
 :: HISTORY:
+:: 2013-02-21 Great speed increase for large files.
 :: 2013-02-17 Original.
 :: 2013-02-18 Some cleanup.
 :: 2013-02-19 Optimization.
@@ -48,12 +49,14 @@ For /F "delims=%SP%" %%a in ("1%TAB%") Do If "%%~a" EQU "1" (
   Goto :EOF
 )
 Set "File=%~f1"
-Set "Work=%MY%\binary"
+For %%a in ("%File%") Do Set "Work=%MY%\%%~nxa"
 Set "dirty="
 Set "quit="
 Set "command="
 Set "mode=HEX"
+Set  "useMore="
 Set "caption=         0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F   0123456789ABCDEF"
+fsUtil > NUL: & If !errorlevel! EQU 0 (Set "fsUtil=true") Else (Set "fsUtil=")
 
 :: Allow an initial set of commands on command line. Remove the file name.
 Set "command=%*"
@@ -64,9 +67,9 @@ MkDir "%MY%"
 
 (Copy /b "%File%" "%Work%")>NUL: && (
   For %%a in ("%File%") Do (
-    Echo %%~aa %%~ta %%~za %%~fa
+    Call :toHex bytes %%~za
+    Echo %%~aa %%~ta %%~za (0x!bytes!^) %%~fa
   )
- Call :dumpHex
 ) || (
   Echo;%msg.newFile%
   Call :newFile
@@ -114,6 +117,22 @@ Goto :EOF
 REM This program may edit itself if no changes are made above this line.
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:toHex <result> <integer>
+SetLocal EnableExtensions EnableDelayedExpansion
+Set "HEX=0123456789abcdef"
+Set "toHex="
+Set "int=%2"
+For /L %%i in (1,1,16) Do (
+  Set /A "n=int%%16, int=int/16"
+  For /L %%n in (!n!,1,!n!) Do Set "toHex=!HEX:~%%n,1!!toHex!"
+)
+For /L %%i in (1,1,16) Do (
+  If "!toHex:~0,1!" EQU "0" Set "toHex=!toHex:~1!"
+)
+If NOT DEFINED toHex Set "toHex=0"
+EndLocal & Set "%1=%toHex%"
+Goto :EOF
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :strlen <return variable>
 For /F "delims=:" %%a in (
   '(Echo;%*^& Echo.NEXT LINE^)^|FindStr /O "NEXT LINE"'
@@ -121,11 +140,22 @@ For /F "delims=:" %%a in (
 Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :dumpHex
-CertUtil -f -encodeHex "%work%" "%work%.hex%~1" %~1 >NUL: 2>&1
+Set "size=0" & For %%a in ("%work%") Do Set "size=%%~za"
+If %size% EQU 0 (
+  Call :newFile
+) Else (
+  CertUtil -f -encodeHex "%work%" "%work%.hex%~1" %~1 >NUL: 2>&1
+)
 Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:rebuild
-CertUtil -f -decodeHex "%work%.hex" "%work%" %~1 >NUL: 2>&1
+:rebuild <file> [type]
+Set "size=0" & For %%a in ("%~1") Do Set "size=%%~za"
+If %size% EQU 0 (
+  Call :newFile
+) Else (
+  CertUtil -f -decodeHex "%~1" "%work%" %~2 >NUL: 2>&1
+)
+For %%a in ("%work%") Do Set "size=%%~za"
 Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :newFile
@@ -254,8 +284,8 @@ Echo;!msg.enter!
 Set /P "bytes=!msg.append!"
 Echo;
 If DEFINED bytes Set /P "=!bytes!"<NUL: >>"%work%.hex12"
-certUtil -f -decodeHex "!work!.hex12"   "!work!"  12 >NUL: 2>&1
-Call :dumpHex
+Call :rebuild "!work!.hex12" 12
+ERASE "!work!.hex*" >NUL:
 EndLocal
 Set "dirty=1"
 Goto :EOF
@@ -286,8 +316,21 @@ Goto :EOF
 If "%~1" EQU "" (Call :commandError %0 & Goto :EOF)
 SetLocal EnableExtensions EnableDelayedExpansion
 Call :getRange %*
-If EXIST "!Work!.raw" Erase "!Work!.raw"
+If DEFINED fsUtil (
+  Call :dumpHex 12
+  TYPE "%work%.hex12">"%work%.hex12b"
+  For %%l in ("%work%.hex12") Do (
+    Set /A "Ao=%range.low%*2, Al=%%~zl-Ao, Bo=0, Bl=(%range.high%+1)*2"
+  )
+  fsUtil file setZeroData offset=!Ao! length=!Al! "%work%.hex12"  >NUL:
+  fsUtil file setZeroData offset=!Bo! length=!Bl! "%work%.hex12b" >NUL:
+  MORE/E /S "%work%.hex12"  >"%work%.hex.raw"
+  MORE/E /S "%work%.hex12b">>"%work%.hex.raw"
+  Goto :finish
+)
+If EXIST "!Work!.hex.raw" Erase "!Work!.hex.raw"
 Set "inBlock="
+Call :dumpHex
 For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
   Set /A "line=0x%%a"
   Set "raw=%%b"
@@ -298,7 +341,7 @@ For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
       Set "inBlock="
       Set /A "i=(%range.high%-line+1)*2"
       For %%i in (!i!) Do Set "raw=!raw:~%%i!"
-      Set /P "=!raw!"<NUL: >>"!work!.raw"
+      Set /P "=!raw!"<NUL: >>"!work!.hex.raw"
     )
   ) Else If !line! EQU %block.start% (
     Set "rawA=" && Set "rawB="
@@ -310,17 +353,14 @@ For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
     ) Else (
       Set "inBlock=true"
     )
-    If "!rawA!!rawB!" NEQ "" Set /P "=!rawA!!rawB!"<NUL: >>"!work!.raw"
+    If "!rawA!!rawB!" NEQ "" Set /P "=!rawA!!rawB!"<NUL: >>"!work!.hex.raw"
   ) Else (
-    If DEFINED raw Set /P "=!raw!"<NUL: >>"!work!.raw"
+    If DEFINED raw Set /P "=!raw!"<NUL: >>"!work!.hex.raw"
   )
 )
-If EXIST "!work!.raw" (
-  certUtil -f -decodeHex "!work!.raw"   "!work!"  12 >NUL: 2>&1
-) Else (
-  Call :newFile
-)
-Call :dumpHex
+:finish
+Call :rebuild "!work!.hex.raw" 12
+ERASE "!work!.hex*" >NUL:
 EndLocal
 Set "dirty=1"
 Goto :EOF
@@ -338,16 +378,48 @@ Goto :EOF
 If "%~1" EQU "" (Call :commandError %0 & Goto :EOF)
 SetLocal EnableExtensions EnableDelayedExpansion
 Set /A "byte=%~1, range.low=byte - (byte %% 16)"
-TYPE NUL:>"!Work!.raw"
-For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
+If DEFINED fsUtil (
+  Call :dumpHex 12
+  TYPE "!work!.hex12">"!work!.hex12b"
+  TYPE "!work!.hex12">"!work!.hex12c"
+  For %%l in ("!work!.hex12") Do (
+    Set /A "Ao=%range.low%*2, Al=%%~zl-Ao, Bo=0, Bl=(%range.low%+16)*2"
+    Set /A "Cal=%range.low%*2, Cbo=Bl, Cbl=%%~zl-Cbo"
+  )
+  fsUtil file setZeroData offset=!Ao! length=!Al! "!work!.hex12"  >NUL:
+  fsUtil file setZeroData offset=!Bo! length=!Bl! "!work!.hex12b" >NUL:
+  fsUtil file setZeroData offset=0 length=!Cal! "!work!.hex12c" >NUL:
+  fsUtil file setZeroData offset=!Cbo! length=!Cbl! "!work!.hex12c" >NUL:
+  MORE/E /S "!work!.hex12"  >"!work!.hex.raw"
+  Set "raw="
+  For /F "skip=1 delims=" %%a in ('MORE/E /S "!work!.hex12c"') Do (
+    If NOT DEFINED raw Set "raw=%%a"
+  )
+  If DEFINED raw For /L %%i in (30,-2,2) Do Set "raw=!raw:~0,%%i! !raw:~%%i!"
+  Echo;!raw!
+  If EXIST "%CLIP%" (
+    Echo;!raw!|%CLIP%
+    Echo;%msg.clipedit%
+  ) Else (
+    Echo;%msg.edit%
+  )
+  Set /P "raw="
+  Set /P "=!raw: =!"<NUL: >>"!work!.hex.raw"
+  Echo;
+  MORE/E /S "!work!.hex12b">>"!work!.hex.raw"
+  Goto :finish
+)
+Call :dumpHex
+TYPE NUL:>"!Work!.hex.raw"
+For /F "usebackq tokens=1*" %%a in ("!Work!.hex") Do (
   Set /A "line=0x%%a"
   Set "raw=%%b"
   If DEFINED raw Set "raw=!raw:~0,48!"
   If !line! EQU %range.low% (
-    Set /P "=!raw!"<NUL:>"!work!.oneline"
+    Set /P "=!raw!"<NUL:>"!work!.hex.oneline"
     Echo;!msg.enter!
     If EXIST "%CLIP%" (
-      "%CLIP%"<"!work!.oneline"
+      "%CLIP%"<"!work!.hex.oneline"
       Echo;%msg.clipedit%
     ) Else (
       Echo;%msg.edit%
@@ -356,14 +428,11 @@ For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
     Set /P "raw="
     Echo;
   )
-  Set /P "=!raw: =!"<NUL: >>"!work!.raw"
+  Set /P "=!raw: =!"<NUL: >>"!work!.hex.raw"
 )
-If EXIST "!work!.raw" (
-  certUtil -f -decodeHex "!work!.raw"   "!work!"  12 >NUL: 2>&1
-) Else (
-  Call :newFile
-)
-Call :dumpHex
+:finish
+Call :rebuild "!work!.hex.raw" 12
+ERASE "!work!.hex*" >NUL:
 EndLocal
 Set "dirty=1"
 Goto :EOF
@@ -372,9 +441,15 @@ Goto :EOF
 :HEX-F: Show file information.
 ::F? 
 Set /P "=ORIGINAL: "<NUL:
-For %%a in ("%File%") Do (Echo %%~aa %%~ta %%~za-bytes %%~fa)
+For %%a in ("%File%") Do (
+  Call :toHex bytes %%~za
+  Echo %%~aa %%~ta %%~za (0x!bytes!^) %%~fa
+)
 Set /P "=EDITOR:   "<NUL:
-For %%a in ("%Work%") Do (Echo %%~aa %%~ta %%~za-bytes %%~fa)
+For %%a in ("%Work%") Do (
+  Call :toHex bytes %%~za
+  Echo %%~aa %%~ta %%~za (0x!bytes!^) %%~fa
+)
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -387,12 +462,34 @@ SetLocal EnableExtensions EnableDelayedExpansion
 Set /A "byte=%~1"
 For %%a in ("%work%") Do (
   If %byte% GEQ %%~za (
+    EndLocal
     Call :%mode%-A
     Goto :EOF
   )
 )
 Call :getRange %byte%
-If EXIST "!Work!.raw" Erase "!Work!.raw"
+If DEFINED fsUtil (
+  Call :dumpHex 12
+  TYPE "!work!.hex12">"!work!.hex12b"
+  TYPE "!work!.hex12">"!work!.hex12c"
+  For %%l in ("!work!.hex12") Do (
+    Set /A "Ao=byte*2, Al=%%~zl-Ao, Bo=0, Bl=(byte+1)*2"
+    Set /A "Cal=byte*2, Cbo=Bl, Cbl=%%~zl-Cbo"
+  )
+  fsUtil file setZeroData offset=!Ao! length=!Al! "!work!.hex12"  >NUL:
+  fsUtil file setZeroData offset=!Bo! length=!Bl! "!work!.hex12b" >NUL:
+  fsUtil file setZeroData offset=0 length=!Cal! "!work!.hex12c" >NUL:
+  fsUtil file setZeroData offset=!Cbo! length=!Cbl! "!work!.hex12c" >NUL:
+  MORE/E /S "!work!.hex12"  >"!work!.hex.raw"
+  Echo;!msg.enter!
+  Set /P "bytes=!msg.insert!"
+  Echo;
+  If DEFINED bytes Set /P "=!bytes: =!"<NUL: >>"!work!.hex.raw"
+  MORE/E /S "!work!.hex12b">>"!work!.hex.raw"
+  Goto :finish
+)
+Call :dumpHex
+If EXIST "!Work!.hex.raw" Erase "!Work!.hex.raw"
 For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
   Set /A "line=0x%%a"
   Set "raw=%%b"
@@ -403,27 +500,24 @@ For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
     If DEFINED raw (
       Set /A "i=(%byte%-line)*2"
       For %%i in (!i!) Do Set "rawA=!raw:~0,%%i!"
-      If DEFINED rawA Set /P "=!rawA!"<NUL: >>"!work!.raw"
+      If DEFINED rawA Set /P "=!rawA!"<NUL: >>"!work!.hex.raw"
     )
     Echo;!msg.enter!
     Set /P "bytes=!msg.insert!"
     Echo;
-    If DEFINED bytes Set /P "=!bytes!"<NUL: >>"%work%.raw"
+    If DEFINED bytes Set /P "=!bytes!"<NUL: >>"%work%.hex.raw"
     If DEFINED raw (
       Set /A "i=(%byte%-line)*2"
       For %%i in (!i!) Do Set "rawA=!raw:~%%i!"
-      If DEFINED rawA Set /P "=!rawA!"<NUL: >>"!work!.raw"
+      If DEFINED rawA Set /P "=!rawA!"<NUL: >>"!work!.hex.raw"
     )
   ) Else (
-    If DEFINED raw Set /P "=!raw!"<NUL: >>"!work!.raw"
+    If DEFINED raw Set /P "=!raw!"<NUL: >>"!work!.hex.raw"
   )
 )
-If EXIST "!work!.raw" (
-  certUtil -f -decodeHex "!work!.raw"   "!work!"  12 >NUL: 2>&1
-) Else (
-  Call :newFile
-)
-Call :dumpHex
+:finish
+Call :rebuild "!work!.hex.raw" 12
+ERASE "!work!.hex*" >NUL:
 EndLocal
 Set "dirty=1"
 Goto :EOF
@@ -439,33 +533,70 @@ Goto :EOF
 :HEX-L? Prints the entire hex dump or the specified range.
 :HEX-L? Example: L 16 - 80
 :HEX-L? Example: L 0x10-0x50
-Echo;%Caption%
-If "%~1" EQU "" (
-  TYPE "%Work%.hex"
-  EXIT /B 0
-  Goto :EOF
-)
 SetLocal EnableExtensions EnableDelayedExpansion
+Set "list=!work!.hex.%*"
+If EXIST "!list!" Goto :show
+If EXIST "!list!*" ERASE "!list!*"
+If NOT EXIST "!work!.hex" Call :dumpHex
+If "%~1" EQU "" (Set "list=!work!.hex" & Goto :show)
 For /F "tokens=1,2 delims=-" %%a in ("%*") Do (
   Set "range.low=%%a"
   Set "range.high=%%b"
 )
 If NOT DEFINED range.high Set "range.high=%range.low%"
 Set /A "range.low=%range.low% - (%range.low% %% 16), range.high=%range.high%"
-For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
-  Set /A "line=0x%%a" 2>NUL:
-  If !line! GTR %range.high% Goto :break
-  If !line! GEQ %range.low% Echo;%%a
+If DEFINED fsUtil (
+  For %%a in ("!work!.hex") Do Set /A "size=%%~za, next=!range.low!+16"
+  Call :toHex $ !range.low!
+  If !range.low! LSS 0x10000 (
+    Set "$=000!$!"
+    Set "$=!$:~-4!"
+  )
+  Set "range.low=!$!"
+  Call :toHex $ !next!
+  If !next! LSS 0x10000 (
+    Set "$=000!$!"
+    Set "$=!$:~-4!"
+  )
+  Set "next=!$!"
+  Set "line="
+  For /F "tokens=1,2 delims=:" %%a in (
+    'FindStr /o /n /b "!range.low!\> !next!\>" "!work!.hex"'
+  ) Do (
+    If NOT DEFINED line (
+      Set /A "line=%%a-1"
+    ) Else (
+      Set /A "offset=%%b, len=size-%%b"
+    )
+  )
+  fsUtil file setZeroData offset=!offset! length=!len! "!work!.hex"  >NUL:
+  MORE /E /S +!line! !work!.hex <NUL: >"!list!"
+) Else (
+  For /F "usebackq delims=" %%a in ("%Work%.hex") Do (
+    Set /A "line=0x%%a" 2>NUL:
+    If !line! GTR %range.high% Goto :show
+    If !line! GEQ %range.low% Echo;%%a
+  )
 )
-:break
+:show
+Echo;%Caption%
+If DEFINED useMore (
+  MORE /E "!list!"
+) Else (
+  TYPE "!list!"
+)
 EndLocal
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:HEX-M: List the file through MORE.
-::M?
-MORE/E "%Work%.hex"
-Goto :EOF 
+:HEX-M [offset[-offset]]: List the hex dump through MORE.
+:HEX-M? Prints the entire hex dump or the specified range through MORE.
+:HEX-M? Example: M 16 - 80
+:HEX-M? Example: M 0x10-0x50
+Set "useMore=true"
+Call :%mode%-L %*
+Set  "useMore="
+Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :HEX-N: <new file>: Write all previous changes to the a new file.
@@ -507,12 +638,8 @@ Goto :EOF
 :HEX-R? The working copy is replaced by the original file.
 (Copy /b "%File%" "%Work%")>NUL: && (
   Set "dirty="
-  Call :dumpHex
-) || (
-  If EXIST "%Work%" (
-    Call :newFile
-  )
 )
+ERASE !work!.hex* >NUL:
 Call :HEX-F
 Goto :EOF
 
@@ -520,6 +647,7 @@ Goto :EOF
 :HEX-S <FindStr command line>: Search file using FINDSTR.
 :HEX-S? Applies the arguments to a FINDSTR search of the hex dump.
 :HEX-S? For example, 'S /C:"0D 0A"' looks for "0D 0A" in the hex dump.
+If NOT EXIST "!work!.hex" Call :dumpHex
 FindStr %* "%Work%.hex"
 Goto :EOF
 
