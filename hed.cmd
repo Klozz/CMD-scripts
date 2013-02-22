@@ -5,10 +5,13 @@
 :: Provides a quick and simple means of editing binary files from the command line.
 :: Get Updated script at: <https://github.com/FrankWestlake/CMD-scripts/blob/master/hed.cmd >
 :: HISTORY:
+:: 2013-02-22 Added the G command (get bytes).
+::            Changed C command to $ (CMD.EXE).
+::            Added C command (change bytes).
 :: 2013-02-21 Great speed increase for large files.
-:: 2013-02-17 Original.
-:: 2013-02-18 Some cleanup.
 :: 2013-02-19 Optimization.
+:: 2013-02-18 Some cleanup.
+:: 2013-02-17 Original.
 @Echo OFF
 SetLocal EnableExtensions EnableDelayedExpansion
 Set "ME=%~n0"
@@ -24,6 +27,7 @@ REM Set "comspecArguments=/U /V:ON" & REM Default arguments for thw C command.
 Set "CLIP=%SystemRoot%\System32\clip.exe"
 :: Messages for language translation.
 Set "msg.append=Append: "
+Set "msg.new=New bytes: "
 Set "msg.insert=Insert: "
 Set "msg.enter=Enter bytes as hex pairs, i.e.: AF 01 DD"
 Set "msg.clipedit=Paste the clipboard into the console, edit the line, then press ENTER."
@@ -58,7 +62,6 @@ Set  "useMore="
 Set "caption=         0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F   0123456789ABCDEF"
 fsUtil > NUL: & If !errorlevel! EQU 0 (Set "fsUtil=true") Else (Set "fsUtil=")
 
-:: Allow an initial set of commands on command line. Remove the file name.
 Set "command=%*"
 Call :strlen $=%1
 For %%i in (%$%) Do Set "command=!command:~%%i!"
@@ -274,7 +277,26 @@ Echo ^<command^> ? More help on a specific command.
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:HEX-A <offset>: Append new bytes to the file.
+:HEX-A <offset>: Append new bytes to the file.::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:HEX-$ [arguments]: Console command line interpreter.
+:HEX-$? Default CMD arguments are in the variable 'comspecArguments' at 
+:HEX-$? the top of this script file.
+:HEX-$?
+:HEX-$? If command C is followed by arguments then '%ComSpec% /C%*'
+:HEX-$? is invoked, otherwise '%ComSpec% %comspecArguments%' is
+:HEX-$? is invoked.
+:HEX-$?   Example: C "cls & dir /r %file%"
+If "%~1" NEQ "" (
+  %ComSpec% %comspecArguments% /C%*
+  Goto :EOF
+)
+SetLocal
+Set "prompt=[%ME%]%prompt%"
+%ComSpec% %comspecArguments%
+EndLocal
+Goto :EOF
+
+
 :HEX-A? New bytes are entered as hex pairs, i.e.: 65 0D 0A
 :HEX-A? Example: A
 If "%~1" NEQ "" (Call :commandError %0 & Goto :EOF)
@@ -291,22 +313,65 @@ Set "dirty=1"
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:HEX-C [arguments]: Console command line interpreter.
-:HEX-C? Default CMD arguments are in the variable 'comspecArguments' at 
-:HEX-C? the top of this script file.
-:HEX-C?
-:HEX-C? If command C is followed by arguments then '%ComSpec% /C%*'
-:HEX-C? is invoked, otherwise '%ComSpec% %comspecArguments%' is
-:HEX-C? is invoked.
-:HEX-C?   Example: C "cls & dir /r %file%"
-If "%~1" NEQ "" (
-  %ComSpec% %comspecArguments% /C%*
-  Goto :EOF
+:HEX-C <offset>: Change a range of bytes to the given set.
+:HEX-C? Example: C 0x3
+:HEX-C? Example: C 0x3=0x07
+If "%~1" EQU "" (Call :commandError %0 & Goto :EOF)
+SetLocal EnableExtensions EnableDelayedExpansion
+Call :getRange %*
+If DEFINED xfsUtil (
+  Call :dumpHex 12
+  TYPE "%work%.hex12">"%work%.hex12b"
+  For %%l in ("%work%.hex12") Do (
+    Set /A "Ao=%range.low%*2, Al=%%~zl-Ao, Bo=0, Bl=(%range.high%+1)*2"
+  )
+  fsUtil file setZeroData offset=!Ao! length=!Al! "%work%.hex12"  >NUL:
+  fsUtil file setZeroData offset=!Bo! length=!Bl! "%work%.hex12b" >NUL:
+  MORE/E /S "%work%.hex12"  >"%work%.hex.raw"
+  Echo;%msg.enter%
+  Set /P "raw=%msg.new%: "
+  Set /P "=!raw: =!"<NUL: >>"%work%.hex.raw"
+  MORE/E /S "%work%.hex12b">>"%work%.hex.raw"
+  Goto :finish
 )
-SetLocal
-Set "prompt=[%ME%]%prompt%"
-%ComSpec% %comspecArguments%
+If EXIST "!Work!.hex.raw" Erase "!Work!.hex.raw"
+Set "inBlock="
+Call :dumpHex
+For /F "usebackq tokens=1*" %%a in ("%Work%.hex") Do (
+  Set /A "line=0x%%a"
+  Set "raw=%%b"
+  If DEFINED raw Set "raw=!raw:~0,48!"
+  If DEFINED raw Set "raw=!raw: =!"
+  If DEFINED inBlock (
+    If !line! EQU %block.end% (
+      Set "inBlock="
+      Set /A "i=(%range.high%-line+1)*2"
+      Echo;%msg.enter%
+      Set /P "new=%msg.new%: "
+      Set /P "=!new: =!"<NUL: >>"!work!.hex.raw"
+      For %%i in (!i!) Do Set /P "raw=!raw:~%%i!"<NUL: >>"!work!.hex.raw"
+    )
+  ) Else If !line! EQU %block.start% (
+    Set /A "i=(%range.low%-line)*2"
+    If DEFINED raw For %%i in (!i!) Do Set /P "=!raw:~0,%%i!"<NUL: >>"!work!.hex.raw"
+    If !line! EQU %block.end% (
+      Echo;%msg.enter%
+      Set /P "new=%msg.new%: "
+      Set /P "=!new: =!"<NUL: >>"!work!.hex.raw"
+      Set /A "i=(%range.high%-line+1)*2"
+      If DEFINED raw For %%i in (!i!) Do Set /P "=!raw:~%%i!"<NUL: >>"!work!.hex.raw"
+    ) Else (
+      Set "inBlock=true"
+    )
+  ) Else (
+    If DEFINED raw Set /P "=!raw!"<NUL: >>"!work!.hex.raw"
+  )
+)
+:finish
+Call :rebuild "!work!.hex.raw" 12
+ERASE "!work!.hex*" >NUL:
 EndLocal
+Set "dirty=1"
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -450,6 +515,68 @@ For %%a in ("%Work%") Do (
   Call :toHex bytes %%~za
   Echo %%~aa %%~ta %%~za (0x!bytes!^) %%~fa
 )
+Goto :EOF
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:HEX-G <offset[-offset]>: Get a range of bytes.
+:HEX-G? Example: G 0x3
+:HEX-G? Example: G 0x3-0x06
+If "%~1" EQU "" (Call :commandError %0 & Goto :EOF)
+SetLocal EnableExtensions EnableDelayedExpansion
+Call :getRange %*
+If DEFINED fsUtil (
+  Call :dumpHex 12
+  For %%l in ("!work!.hex12") Do (
+    Set /A "al=%range.low%*2, b=(%range.high%+1)*2, bl=(%%~zl*2)-(%range.high%*2)"
+  )
+  fsUtil file setZeroData offset=0 length=!al! "!work!.hex12"  >NUL:
+  fsUtil file setZeroData offset=!b! length=!bl! "!work!.hex12" >NUL:
+  MORE/E /S "!work!.hex12"  >"!work!.hex.raw"
+  Set "raw="
+  For /F "skip=1 delims=" %%a in ('MORE/E /S "!work!.hex12"') Do (
+    Set "raw=!raw!%%a"
+  )
+  If DEFINED raw (
+    Call :strlen $ !raw!
+    For /L %%i in (0, 2, !$!) Do Set /P "=!raw:~%%i,2! "<NUL:
+    Echo;
+  )
+  Goto :finish
+)
+Set "inBlock="
+Call :dumpHex 4
+Set /A "line=0"
+For /F "usebackq delims=" %%a in ("%Work%.hex4") Do (
+  If DEFINED inBlock (
+    If !line! EQU %block.end% (
+      Set "inBlock="
+      Set /A "i=line, j=%range.high%"
+    ) Else (
+      Set /A "i=line, j=line+15"
+    )
+  ) Else If !line! EQU %block.start% (
+    Set /A "i=%range.low%"
+    If !line! EQU %block.end% (
+      Set /A "j=%range.high%"
+    ) Else (
+      Set "inBlock=true"
+      Set /A "j=line+15"
+    )
+  ) Else (
+    Set /A "i=-1, j=-1"
+  )
+  For %%n in (%%a) Do (
+    If !line! GEQ !i! (
+      If !line! LEQ !j! (Set /P "=%%n "<NUL:)
+    )
+    Set /A "line+=1"
+  )
+)
+Echo;
+:finish
+ERASE "!work!.hex*" >NUL:
+EndLocal
+Set "dirty=1"
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -668,5 +795,10 @@ If /I "%~1" EQU "%yes%" (
   )
 )
 Call :HEX-f
+Goto :EOF
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:HEX-X <find> <replacement>: Replace "find" bytes with "replacement" bytes.
+Call :dumpHex 12
 Goto :EOF
 :: END SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
