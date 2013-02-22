@@ -319,7 +319,7 @@ Goto :EOF
 If "%~1" EQU "" (Call :commandError %0 & Goto :EOF)
 SetLocal EnableExtensions EnableDelayedExpansion
 Call :getRange %*
-If DEFINED xfsUtil (
+If DEFINED fsUtil (
   Call :dumpHex 12
   TYPE "%work%.hex12">"%work%.hex12b"
   For %%l in ("%work%.hex12") Do (
