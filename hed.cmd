@@ -576,7 +576,6 @@ Echo;
 :finish
 ERASE "!work!.hex*" >NUL:
 EndLocal
-Set "dirty=1"
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
