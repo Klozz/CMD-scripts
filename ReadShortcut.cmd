@@ -1,3 +1,6 @@
+:: readShortcut.cmd
+:: From the desk of Frank P. Westlake, 2013-03-03b
+:: Displays the disassembly of a shortcut file.
 @Echo OFF
 SetLocal EnableExtensions EnableDelayedExpansion
 Set "ME=%~n0"
