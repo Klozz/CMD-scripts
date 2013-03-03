@@ -1,7 +1,8 @@
 @Echo OFF
 SetLocal EnableExtensions EnableDelayedExpansion
 Set "ME=%~n0"
-Set "MEx=%~nx0"
+Set "MEdp=%~dp0"
+Set "MEnx=%~nx0"
 Set "link=%~f1"
 If ""   EQU "%~1" Goto :help
 If "/?" EQU "%~1" Goto :help
@@ -24,7 +25,7 @@ Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :readShortcut <link file>
 SetLocal EnableExtensions EnableDelayedExpansion
-For /F "delims=" %%a in ('ForFiles /M %MEx% /C "cmd /c Echo;0x08"') Do Set "BS=%%a"
+For /F "delims=" %%a in ('ForFiles /P "%MEdp:~0,-1%" /M "%MEnx%" /C "cmd /c Echo;0x08"') Do Set "BS=%%a"
 certUtil -encodeHex "%~f1" "%MY%\hex" 12 >NUL: || (
   Echo %ME%: Unable todecode this file.
   Goto :EOF
@@ -662,7 +663,7 @@ Set /A "@=%~2"
 Set /A "L=4,  #=@,@+=L" & Call :byteToHex Type !#! !L! & Echo;    Type:                        0x!Type!
 Set /A "L=4,  #=@,@+=L" & REM Call :toInt $    !#! !L! & Echo;    Padding:                     !$!
 Set /A "L=%~3-8"
-Set /P =-!BS!    Value:                       <NUL:"
+Set /P "=-!BS!    Value:                       "<NUL:
 REM Set /P "=Value:                           "<NUL:
 Set /A "Type=0x%Type%"
 For %%a in ( 0x0010 0x0011) Do ( REM INT8 UINT8
