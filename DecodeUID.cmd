@@ -242,7 +242,7 @@ Goto :END
 :Invalid
 Echo.The UUID is invalid. It must be 32 characters in one of these two forms: >&2
 Echo.    a1a2a3a4-b1b2-c1c2-d1e1-f1f2f3f4f5f6 >&2
-Echo.    a4a3a2a1b2b1c2c1d1e1e1f2f3f4f5f6 >&2
+Echo.    a4a3a2a1b2b1c2c1d1e1f1f2f3f4f5f6 >&2
 Exit /B 1
 :END
 If EXIST "%#eval.js%" DEL "%#eval.js%"
