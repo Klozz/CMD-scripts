@@ -1,8 +1,10 @@
 :: readShortcut.cmd
-:: From the desk of Frank P. Westlake, 2013-03-04
+:: From the desk of Frank P. Westlake, 2013-03-04a
 :: Displays the disassembly of a shortcut file.
 :: Written on Windows 8.
 :: Requires CERTUTIL, FORFILES.
+:: Use MicroSoft's "[MS-SHLLINK]: Shell Link (.LNK) Binary File Format"
+:: as documentation for the settings and values in this script.
 @Echo OFF
 SetLocal EnableExtensions EnableDelayedExpansion
 Set "ME=%~n0"
@@ -26,6 +28,9 @@ Goto :EOF
 :help
 Echo;%~n0 ^<shortcut file^>
 Echo;Displays a disassembly of the shortcut file.
+Echo;
+Echo;Use MicroSoft's "[MS-SHLLINK]: Shell Link (.LNK) Binary File Format"
+Echo;as documentation for the settings and values in this script.
 Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :readShortcut <link file>
