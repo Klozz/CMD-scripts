@@ -314,7 +314,7 @@ If %L% LEQ 0x39 (
   Set "X=ABCDEFGHIJKLMNOPQRSTUVWXYZ"
   For %%L in (!L!) Do Set "key=!X:~%%L,1!"
 ) Else If %L% LEQ 0x87 (
-  Set /A "L-=0x69"
+  Set /A "L-=0x6F"
   Set "key=F!L!"
 ) Else If %L% LEQ 0x90 (
   Set "key=NUM LOCK"
