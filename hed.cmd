@@ -1,10 +1,11 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: hed.cmd
 :: An EDLIN style hex editor.
-:: From the desk of Frank P. Westlake, 2013-02-21.
+:: From the desk of Frank P. Westlake, 2013-03-04.
 :: Provides a quick and simple means of editing binary files from the command line.
 :: Get Updated script at: <https://github.com/FrankWestlake/CMD-scripts/blob/master/hed.cmd >
 :: HISTORY:
+:: 2013-03-04 Fixed failure to GET (G) first 16 bytes.
 :: 2013-02-22 Added the G command (get bytes).
 ::            Changed C command to $ (CMD.EXE).
 ::            Added C command (change bytes).
@@ -529,11 +530,11 @@ If DEFINED fsUtil (
   For %%l in ("!work!.hex12") Do (
     Set /A "al=%range.low%*2, b=(%range.high%+1)*2, bl=(%%~zl*2)-(%range.high%*2)"
   )
-  fsUtil file setZeroData offset=0 length=!al! "!work!.hex12"  >NUL:
+  fsUtil file setZeroData offset=0   length=!al! "!work!.hex12" >NUL:
   fsUtil file setZeroData offset=!b! length=!bl! "!work!.hex12" >NUL:
   MORE/E /S "!work!.hex12"  >"!work!.hex.raw"
   Set "raw="
-  For /F "skip=1 delims=" %%a in ('MORE/E /S "!work!.hex12"') Do (
+  For /F "delims=" %%a in ('MORE/E /S "!work!.hex12"') Do (
     Set "raw=!raw!%%a"
   )
   If DEFINED raw (
