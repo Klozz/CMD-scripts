@@ -1,5 +1,5 @@
 :: readShortcut.cmd
-:: From the desk of Frank P. Westlake, 2013-03-04a
+:: From the desk of Frank P. Westlake, 2013-03-05
 :: Displays the disassembly of a shortcut file.
 :: Written on Windows 8.
 :: Requires CERTUTIL, FORFILES.
@@ -98,7 +98,7 @@ SetLocal EnableExtensions EnableDelayedExpansion
 ECHO LINKINFO **************************************************************
 Set /A "@=%~2"
 Set /A "L=8,  #=@,@+=L" & Call :toInt LinkInfo                        !#! !L! & Echo;LinkInfoSize:                    !LinkInfo!
-Set /A "L=8,  #=@,@+=L" & Call :toInt LinkInfoHeader                  !#! !L! & Echo;LinkInfoHeaderSize:              !LinkInfo!
+Set /A "L=8,  #=@,@+=L" & Call :toInt LinkInfoHeader                  !#! !L! & Echo;LinkInfoHeaderSize:              !LinkInfoHeader!
 Set /A "L=8,  #=@,@+=L"
 Call :byteToHex $ !#! !L! & Call :toInt LinkInfoFlags                   !#! !L!
 Echo;LinkInfoFlags:                   0x!$!
