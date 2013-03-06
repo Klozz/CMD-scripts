@@ -37,7 +37,7 @@ Goto :EOF
 SetLocal EnableExtensions EnableDelayedExpansion
 For /F "delims=" %%a in ('ForFiles /P "%MEdp:~0,-1%" /M "%MEnx%" /C "cmd /c Echo;0x08"') Do Set "BS=%%a"
 certUtil -encodeHex "%~f1" "%MY%\hex" 12 >NUL: || (
-  Echo %ME%: Unable todecode this file.
+  Echo %ME%: Unable to decode this file.
   Goto :EOF
 )>&2
 For /F "usebackq delims=" %%a in ("%MY%\hex") Do Set "S=%%a"
