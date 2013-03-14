@@ -1,34 +1,39 @@
-CMD scripts
-ads.cmd              List alternate data streams.
-apm.cmd              Arbitrary precision math.
-BatteryGraphic.cmd   Displays a bar representing remaining battery capacity.
-body.cmd             Print the portion of a file which begins and ends with the specified text.
-CompareProcesses.cmd Show CPU times of subroutines or scripts.
-cpuLoadChart.cmd     Shows a graphic color chart of CPU load.
-cpuLoadGraphic.cmd   Shows a bar representing CPU load.
-DecodeUID.cmd        Decode a UID.
-deZero.cmd           A subroutine which removes leading zeroes from a number.
-draw.cmd             Draw color ASCII art files.
-ed.cmd               An EDLIN style text editor.
-FileAge.cmd          Lists files with an age matching the given criteria.
-FormatNumber.cmd     A subroutine which formats numbers with commas.
-getVolumeRoot.cmd    Find the mount point of a volume by name.
-hed.cmd              An EDLIN style hex editor.
-hex.cmd              Prints a hex dump of a file or stream.
-ipv6.cmd             IPv4/IPv6 translation routines.
-MathToy.cmd          Commnd line math exercises.
-obfuscate.cmd        Renders a text file unreadable without the correct key. See also randomizeKey.cmd.
-parseArgs.cmd        Demonstrates a simply configured command line parsing routine. 
-PathList.cmd         Prints the path as a list.
-PrepMessage.cmd      Prepare an Internet message body with contained scripts.
-ProgBar.cmd          A algorithm which shows a graphic progress bar.
-RandomizeKey.cmd     Randomizes a key for use with obfuscate.cmd above.
-ReadShortcut.cmd     Displays a disassembly of a shortcut file.
-RecycleBin.cmd       Enumerates the recycle bin, deletes items in it, or restores items to their original location.
-replace.cmd          Replace text in strings.
-rudeGraph.cmd        A rudimentary graph demonstration.
-toLowercase.cmd      A subroutine which converts a string to lower case.
-toTitlecase.cmd      A subroutine which converts a string to title case.
-toUppercase.cmd      A subroutine which converts a string to upper case.
-Wrap_Demo.cmd        A console word wrap routine.
-xmlParse.cmd         Push and pull parse XML files.
+CMD SCRIPTS
+ads.cmd               List alternate data streams.
+apm.cmd               Arbitrary precision math.
+BatteryGraphic.cmd    Displays a bar representing remaining battery capacity.
+body.cmd              Print the portion of a file which begins and ends with the specified text.
+CompareProcesses.cmd  Show CPU times of subroutines or scripts.
+cpuLoadChart.cmd      Shows a graphic color chart of CPU load.
+cpuLoadGraphic.cmd    Shows a bar representing CPU load.
+DecodeUID.cmd         Decode a UID.
+deZero.cmd            A subroutine which removes leading zeroes from a number.
+draw.cmd              Draw color ASCII art files.
+ed.cmd                An EDLIN style text editor.
+FileAge.cmd           Lists files with an age matching the given criteria.
+FormatNumber.cmd      A subroutine which formats numbers with commas.
+getVolumeRoot.cmd     Find the mount point of a volume by name.
+hed.cmd               An EDLIN style hex editor.
+hex.cmd               Prints a hex dump of a file or stream.
+ipv6.cmd              IPv4/IPv6 translation routines.
+MathToy.cmd           Commnd line math exercises.
+obfuscate.cmd         Renders a text file unreadable without the correct key. See also randomizeKey.cmd.
+parseArgs.cmd         Demonstrates a simply configured command line parsing routine. 
+PathList.cmd          Prints the path as a list.
+PrepMessage.cmd       Prepare an Internet message body with contained scripts.
+ProgBar.cmd           A algorithm which shows a graphic progress bar.
+RandomizeKey.cmd      Randomizes a key for use with obfuscate.cmd above.
+ReadShortcut.cmd      Displays a disassembly of a shortcut file.
+RecycleBin.cmd        Enumerates the recycle bin, deletes items in it, or restores items to their original location.
+replace.cmd           Replace text in strings.
+rudeGraph.cmd         A rudimentary graph demonstration.
+toLowercase.cmd       A subroutine which converts a string to lower case.
+toTitlecase.cmd       A subroutine which converts a string to title case.
+toUppercase.cmd       A subroutine which converts a string to upper case.
+Wrap_Demo.cmd         A console word wrap routine.
+xmlParse.cmd          Push and pull parse XML files.
+ZIP ARCHIVE RELATED SCRIPTS
+selfExtractingZip.cmd A script which can be used as part of a self-extracting ZIP archive.
+unZip.cmd             A subroutine which extracts stored files from a ZIP archive.
+zip.cmd               A subroutine which stores files to a ZIP archive.
+ZipUnZipDemo.cmd      A demonstration of the zip and unZip subroutines.
