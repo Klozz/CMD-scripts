@@ -4,7 +4,7 @@
 :: Extracts files from an .ZIP archive.
 :: From the desk of Frank P. Westlake, 2013-03-14
 :: Compatibility identifier:           1
-:: Requires :zip with same compatibility indocator.
+:: Requires :zip with same compatibility indicator.
 :: Written on Windows 8.
 :: Requires CERTUTIL.exe
 :: Requires FSUTIL.exe write access.

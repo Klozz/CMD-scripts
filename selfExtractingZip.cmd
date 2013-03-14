@@ -12,7 +12,9 @@ INSTRUCTIONS
 from the appended archive into the current directory call the :unZip
 subroutine with the archive file name -- which in the case of a self
 extracting script is the script file name -- and with the list of files to
-extract, or with no list to extract all files. For example:
+extract, or with no list to extract all files. It is vital that the script
+end with a blank line so that the appended archive will start a new line.
+To extract:
 
      CALL :unZip "%~f0" cowInterrogation.txt
 
@@ -36,7 +38,7 @@ Goto :EOF
 :: Extracts files from an .ZIP archive.
 :: From the desk of Frank P. Westlake, 2013-03-09
 :: Compatibility identifier:           1
-:: Requires :zip with same compatibility indocator.
+:: Requires :zip with same compatibility indicator.
 :: Written on Windows 8.
 :: Requires CERTUTIL.exe
 :: Requires FSUTIL.exe write access.

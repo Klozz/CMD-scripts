@@ -3,7 +3,7 @@
 :: Stores files into an .ZIP archive.
 :: From the desk of Frank P. Westlake, 2013-03-14
 :: Compatibility identifier:           1
-:: Requires :unZip with same compatibility indocator.
+:: Requires :unZip with same compatibility indicator.
 :: Written on Windows 8.
 :: Requires CERTUTIL.exe
 :: Requires FSUTIL.exe write access.
