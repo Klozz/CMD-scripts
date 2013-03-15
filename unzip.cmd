@@ -51,7 +51,7 @@ For /F "useBackQ tokens=1*" %%a in ("!$MY!\hex") Do (
 )
 For %%a in (!$revList!) Do (
   SORT /R "!$MY!\hex.%%a" >>"!$MY!\rev"
-  REM ERASE "!$MY!\hex.%%a"
+  ERASE "!$MY!\hex.%%a"
 )
 For /F "usebackq tokens=1*" %%a in ("!$MY!\rev") Do (
   Set /A "$p=0x%%a"
@@ -71,11 +71,11 @@ For /F "usebackq tokens=1*" %%a in ("!$MY!\rev") Do (
   ) Else If !$p! LSS !$cdOffset! (
     For /F %%o in ('Set /A "($cdOffset-$p)*2"') Do Set "$bytes=!$longLine:~%%o!"
     Call :unZip.504b0102
-    REM ERASE "!$MY!\rev"
+    ERASE "!$MY!\rev"
     CertUtil -f -encodeHex "%$zip%" "!$MY!\hex" 12 >NUL: 2>&1
     Echo;!$offsetList! | SORT>"!$MY!\offsetList"
     For /F "usebackq delims=" %%a in ("!$MY!\offsetList") Do Set "$offsetList=%%a"
-    REM ERASE "!$MY!\offsetList" 1>NUL: 2>NUL:
+    ERASE "!$MY!\offsetList" 1>NUL: 2>NUL:
     For %%o in (!$offsetList!) Do (
       For /F "tokens=1-5 delims=:" %%e in ("%%o") Do (
         Set /A "$fo=%%e+4, $xl=$zipSize2-$x, $dl=%%h, $nl=%%f, $crc32=%%i"
@@ -94,8 +94,8 @@ Echo Extracting "%%n".
             fsUtil file setZeroData offset=0    length=!$p!  "!$MY!\%%g.work" >NUL:
             fsUtil file setZeroData offset=!$z! length=!$zl! "!$MY!\%%g.work" >NUL:
             MORE /E /S "!$MY!\%%g.work" >"!$MY!\%%g"
-            CertUtil -f -decodeHex "!$MY!\%%g" "!$MY!\%%n" 12
-            REM CertUtil -f -decodeHex "!$MY!\%%g" "!$MY!\%%n" 12 >NUL: 2>&1
+            REM CertUtil -f -decodeHex "!$MY!\%%g" "!$MY!\%%n" 12
+            CertUtil -f -decodeHex "!$MY!\%%g" "!$MY!\%%n" 12 >NUL: 2>&1
             Set "$extracted="
             If DEFINED $fileList (
               For %%F in (!$fileList!) Do (
@@ -103,13 +103,13 @@ Echo Extracting "%%n".
                   COPY "!$MY!\%%n" "%%n">NUL:
                   Set "$extracted=true"
                 )
-                REM ERASE "!$MY!\%%n"
+                ERASE "!$MY!\%%n"
               )
             ) Else (
               MOVE "!$MY!\%%n" "%%n">NUL:
               Set "$extracted=true"
             )
-            REM ERASE "!$MY!\%%g*" "!$MY!\t*"
+            ERASE "!$MY!\%%g*" "!$MY!\t*"
             If DEFINED $extracted (
               If DEFINED $checkCRC (
                 Echo Extracted "%%n".
@@ -125,7 +125,7 @@ Echo Extracting "%%n".
   )
 )
 :break
-REM RD /S /Q "!$MY!"
+RD /S /Q "!$MY!"
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

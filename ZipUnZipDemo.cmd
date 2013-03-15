@@ -280,6 +280,10 @@ For %%f in (%*) Do (
     Set $fileList=!$fileList! "%%~f"
   )
 )
+If NOT EXIST "!$zip!" (
+  Echo Missing archive file.
+  Goto :EOF
+)>&2
 Set "$self=0"
 If "%~f0" EQU "%~f1" (
   For /F "delims=:" %%a  in ('FindStr /O /B /R "PK\>" "!$zip!"') Do (
@@ -288,24 +292,36 @@ If "%~f0" EQU "%~f1" (
   )
 )
 :break
-For %%a in ("%$zip%") Do Set /A "$zipSize2=2*%%~za"
+For %%a in ("%$zip%") Do Set /A "$zipSize2=%%~za*2"
 CertUtil -f -encodeHex "%$zip%" "!$MY!\hex" 10 >NUL: 2>&1
-SORT /R "!$MY!\hex" /O "!$MY!\rev"
+Set "$file=0x10000"
+Set "$revList=0x10000"
+For /F "useBackQ tokens=1*" %%a in ("!$MY!\hex") Do (
+  If 0x%%a GEQ !$file! (
+    Set "$file=!$file!0"
+    Set "$revList=!$file! !$revList!"
+  )
+  (Echo;%%a %%b)>>"!$MY!\hex.!$file!"
+)
+For %%a in (!$revList!) Do (
+  SORT /R "!$MY!\hex.%%a" >>"!$MY!\rev"
+  ERASE "!$MY!\hex.%%a"
+)
 For /F "usebackq tokens=1*" %%a in ("!$MY!\rev") Do (
   Set /A "$p=0x%%a"
   Set "$line=%%b"
   Set "$longLine=!$line: =!!$longLine!"
   If NOT DEFINED $cdOffset (
-      If "!$longLine:504b0506=!" NEQ "!$longLine!" (
-        For /L %%i in (0,2,30) Do (
-          If /I "!$longLine:~%%i,8!" EQU "504b0506" (
-            Set "$bytes=!$longLine:~%%i!"
-            Call :unZip.byteToInt $cdOffset 32 8
-            Set /A "$cdOffset+=$self"
-            Set "$longLine=!$longLine:~0,%%i!"
-          )
+    If "!$longLine:504b0506=!" NEQ "!$longLine!" (
+    For /L %%i in (0,2,30) Do (
+        If /I "!$longLine:~%%i,8!" EQU "504b0506" (
+          Set "$bytes=!$longLine:~%%i!"
+          Call :unZip.byteToInt $cdOffset 32 8
+          Set /A "$cdOffset+=$self"
+          Set "$longLine=!$longLine:~0,%%i!"
         )
       )
+    )
   ) Else If !$p! LSS !$cdOffset! (
     For /F %%o in ('Set /A "($cdOffset-$p)*2"') Do Set "$bytes=!$longLine:~%%o!"
     Call :unZip.504b0102
@@ -328,11 +344,12 @@ For /F "usebackq tokens=1*" %%a in ("!$MY!\rev") Do (
         Echo;%%g >"!$MY!\t.hex"
         CertUtil -f -decodeHex "!$MY!\t.hex" "!$MY!\t" 12 >NUL: 2>&1 && (
           For /F usebackq^ delims^=^ EOL^= %%n in ("!$MY!\t") Do (
+Echo Extracting "%%n".
             fsUtil file setZeroData offset=0    length=!$p!  "!$MY!\%%g.work" >NUL:
             fsUtil file setZeroData offset=!$z! length=!$zl! "!$MY!\%%g.work" >NUL:
             MORE /E /S "!$MY!\%%g.work" >"!$MY!\%%g"
+            REM CertUtil -f -decodeHex "!$MY!\%%g" "!$MY!\%%n" 12
             CertUtil -f -decodeHex "!$MY!\%%g" "!$MY!\%%n" 12 >NUL: 2>&1
-Echo Extracting "%%n".
             Set "$extracted="
             If DEFINED $fileList (
               For %%F in (!$fileList!) Do (
