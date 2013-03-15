@@ -1,13 +1,17 @@
+@Echo OFF
+Call :zip %*
+Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: :zip
 :: Stores files into an .ZIP archive.
-:: From the desk of Frank P. Westlake, 2013-03-14
+:: From the desk of Frank P. Westlake, 2013-03-15
 :: Compatibility identifier:           1
 :: Requires :unZip with same compatibility indicator.
 :: Written on Windows 8.
 :: Requires CERTUTIL.exe
 :: Requires FSUTIL.exe write access.
-:zip <zip file> [file list ....]
+:: Does not store CRC unless switch /CRC is included.
+:zip [/CRC] <zip file> [file list ....]
 SetLocal EnableExtensions EnableDelayedExpansion
 For /F "tokens=1 delims==" %%a in ('Set "$" 2^>NUL:') Do Set "%%a="
 Set "$tm=%TIME: =%"
@@ -20,7 +24,9 @@ Set /A "$entries=0"
 If "%~2" EQU "" ( Set "commandLine=%~1 *"
 )          Else ( Set "commandLine=%*" )
 For %%f in (%*) Do (
-  If NOT DEFINED $zip ( Set "$zip=%%~f"
+  If /I "%%~f" EQU "/CRC" (
+    Set "$checkCRC=true"
+  ) Else If NOT DEFINED $zip ( Set "$zip=%%~f"
   ) Else (
     For /F "tokens=1 delims==" %%a in ('Set "@" 2^>NUL:') Do Set "%%a="
     Echo;Storing "%%~f" ...
@@ -47,7 +53,8 @@ For %%f in (%*) Do (
     Set /P "=!@date! "  <NUL: >>"!$MY!\localHex"   % REM date           %
     Set /P "=!@date! "  <NUL: >>"!$MY!\CentralHex" % REM date           %
 
-    Call :zip.getCRC32 @crc "%%~ff"
+    Set /A "@crc=0"
+    If DEFINED $checkCRC Call :zip.getCRC32 @crc "%%~ff"
     Call :zip.bytesFromInt @crc 4 !@crc!
     Set /P "=!@crc! "   <NUL: >>"!$MY!\localHex"   % REM CRC32          %
     Set /P "=!@crc! "   <NUL: >>"!$MY!\CentralHex" % REM CRC32          %
@@ -175,4 +182,38 @@ For /L %%i in (1,1,%~2) Do (
   )
 )
 EndLocal & Set "%~1=%$%"
+Goto :EOF
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:unZip.setTable
+:zip.setTable
+Set /A "xor=0xEDB88320"
+For /L %%n in (0, 1, 255) Do (
+  Set /A "c=%%n"
+  For /L %%k in (8, -1, 1) Do (
+    Set /A "t=c&1, c=(c>>1)&0x7FFFFFFF"
+    If !t! NEQ 0 Set /A "c=xor^c"
+    Set /A "TABLE%%n=c"
+  )
+)
+Set "TABLE=%~f0"
+Goto :EOF
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:unZip.getCRC32 <var name> <name of hex file>
+If "!TABLE!" NEQ "%~f0" Call :unZip.setTable
+:zip.getCRC32 <var name> <name of hex file>
+If "!TABLE!" NEQ "%~f0" Call :zip.setTable
+CertUtil -f -encodeHex "%~2" "!$MY!\crc" 4 >NUL: 2>&1
+SetLocal EnableExtensions
+Set /A "crc=~0"
+For /F "usebackq delims=" %%L in ("!$MY!\crc") Do (
+  For %%B in (%%L) Do (
+    Set /A "n=(crc^0x%%B)&0xFF"
+    For %%i in (!n!) Do Set "n=!TABLE%%i!"
+    Set /A "crc=n^((crc>>8)&0xFFFFFF)"
+  )
+)
+Set /A "crc=~crc"
+EndLocal & Set "%~1=%crc%"
+Erase "!$MY!\crc"
 Goto :EOF

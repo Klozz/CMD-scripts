@@ -1,13 +1,17 @@
+@Echo OFF
+Call :unZip %*
+Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:unZip <archive> [file list]
+:unZip [/CRC] <archive> [file list]
 :: :unZip
 :: Extracts files from an .ZIP archive.
-:: From the desk of Frank P. Westlake, 2013-03-14
+:: From the desk of Frank P. Westlake, 2013-03-15
 :: Compatibility identifier:           1
 :: Requires :zip with same compatibility indicator.
 :: Written on Windows 8.
 :: Requires CERTUTIL.exe
 :: Requires FSUTIL.exe write access.
+:: Does not verify CRC unless switch /CRC is included.
 SetLocal EnableExtensions EnableDelayedExpansion
 For /F "tokens=1 delims==" %%a in ('Set "$" 2^>NUL:') Do Set "%%a="
 Set "tm=%TIME: =%"
@@ -15,11 +19,17 @@ Set "$ME=%~n0"
 Set "$MY=%TEMP%\%~n0.%tm::=%%RANDOM%"
 MkDir "!$MY!"
 For %%f in (%*) Do (
-  If NOT DEFINED $zip ( Set "$zip=%%~ff"
+  If /I "%%~f" EQU "/CRC" (
+    Set "$checkCRC=true"
+  ) Else If NOT DEFINED $zip ( Set "$zip=%%~ff"
   ) Else (
     Set $fileList=!$fileList! "%%~f"
   )
 )
+If NOT EXIST "!$zip!" (
+  Echo Missing archive file.
+  Goto :EOF
+)>&2
 Set "$self=0"
 If "%~f0" EQU "%~f1" (
   For /F "delims=:" %%a  in ('FindStr /O /B /R "PK\>" "!$zip!"') Do (
@@ -28,32 +38,44 @@ If "%~f0" EQU "%~f1" (
   )
 )
 :break
-For %%a in ("%$zip%") Do Set /A "$zipSize2=2*%%~za"
+For %%a in ("%$zip%") Do Set /A "$zipSize2=%%~za*2"
 CertUtil -f -encodeHex "%$zip%" "!$MY!\hex" 10 >NUL: 2>&1
-SORT /R "!$MY!\hex" /O "!$MY!\rev"
+Set "$file=0x10000"
+Set "$revList=0x10000"
+For /F "useBackQ tokens=1*" %%a in ("!$MY!\hex") Do (
+  If 0x%%a GEQ !$file! (
+    Set "$file=!$file!0"
+    Set "$revList=!$file! !$revList!"
+  )
+  (Echo;%%a %%b)>>"!$MY!\hex.!$file!"
+)
+For %%a in (!$revList!) Do (
+  SORT /R "!$MY!\hex.%%a" >>"!$MY!\rev"
+  REM ERASE "!$MY!\hex.%%a"
+)
 For /F "usebackq tokens=1*" %%a in ("!$MY!\rev") Do (
   Set /A "$p=0x%%a"
   Set "$line=%%b"
   Set "$longLine=!$line: =!!$longLine!"
   If NOT DEFINED $cdOffset (
-      If "!$longLine:504b0506=!" NEQ "!$longLine!" (
-        For /L %%i in (0,2,30) Do (
-          If /I "!$longLine:~%%i,8!" EQU "504b0506" (
-            Set "$bytes=!$longLine:~%%i!"
-            Call :unZip.byteToInt $cdOffset 32 8
-            Set /A "$cdOffset+=$self"
-            Set "$longLine=!$longLine:~0,%%i!"
-          )
+    If "!$longLine:504b0506=!" NEQ "!$longLine!" (
+    For /L %%i in (0,2,30) Do (
+        If /I "!$longLine:~%%i,8!" EQU "504b0506" (
+          Set "$bytes=!$longLine:~%%i!"
+          Call :unZip.byteToInt $cdOffset 32 8
+          Set /A "$cdOffset+=$self"
+          Set "$longLine=!$longLine:~0,%%i!"
         )
       )
+    )
   ) Else If !$p! LSS !$cdOffset! (
     For /F %%o in ('Set /A "($cdOffset-$p)*2"') Do Set "$bytes=!$longLine:~%%o!"
     Call :unZip.504b0102
-    ERASE "!$MY!\rev"
+    REM ERASE "!$MY!\rev"
     CertUtil -f -encodeHex "%$zip%" "!$MY!\hex" 12 >NUL: 2>&1
     Echo;!$offsetList! | SORT>"!$MY!\offsetList"
     For /F "usebackq delims=" %%a in ("!$MY!\offsetList") Do Set "$offsetList=%%a"
-    ERASE "!$MY!\offsetList" 1>NUL: 2>NUL:
+    REM ERASE "!$MY!\offsetList" 1>NUL: 2>NUL:
     For %%o in (!$offsetList!) Do (
       For /F "tokens=1-5 delims=:" %%e in ("%%o") Do (
         Set /A "$fo=%%e+4, $xl=$zipSize2-$x, $dl=%%h, $nl=%%f, $crc32=%%i"
@@ -67,12 +89,13 @@ For /F "usebackq tokens=1*" %%a in ("!$MY!\rev") Do (
         COPY /Y "!$MY!\hex" "!$MY!\%%g.work" >NUL:
         Echo;%%g >"!$MY!\t.hex"
         CertUtil -f -decodeHex "!$MY!\t.hex" "!$MY!\t" 12 >NUL: 2>&1 && (
-          For /F usebackq^ delims^=^  %%n in ("!$MY!\t") Do (
+          For /F usebackq^ delims^=^ EOL^= %%n in ("!$MY!\t") Do (
+Echo Extracting "%%n".
             fsUtil file setZeroData offset=0    length=!$p!  "!$MY!\%%g.work" >NUL:
             fsUtil file setZeroData offset=!$z! length=!$zl! "!$MY!\%%g.work" >NUL:
             MORE /E /S "!$MY!\%%g.work" >"!$MY!\%%g"
-            CertUtil -f -decodeHex "!$MY!\%%g" "!$MY!\%%n" 12 >NUL: 2>&1
-Echo Extracting "%%n".
+            CertUtil -f -decodeHex "!$MY!\%%g" "!$MY!\%%n" 12
+            REM CertUtil -f -decodeHex "!$MY!\%%g" "!$MY!\%%n" 12 >NUL: 2>&1
             Set "$extracted="
             If DEFINED $fileList (
               For %%F in (!$fileList!) Do (
@@ -80,17 +103,19 @@ Echo Extracting "%%n".
                   COPY "!$MY!\%%n" "%%n">NUL:
                   Set "$extracted=true"
                 )
-                ERASE "!$MY!\%%n"
+                REM ERASE "!$MY!\%%n"
               )
             ) Else (
               MOVE "!$MY!\%%n" "%%n">NUL:
               Set "$extracted=true"
             )
-            ERASE "!$MY!\%%g*" "!$MY!\t*"
+            REM ERASE "!$MY!\%%g*" "!$MY!\t*"
             If DEFINED $extracted (
-              Echo Extracted "%%n".
-              Call :unZip.getCRC32 crc "%%n"
-              If !crc! NEQ !$crc32! Echo !$ME!: %%n has bad CRC: !$crc32! should be !crc!.>&2
+              If DEFINED $checkCRC (
+                Echo Extracted "%%n".
+                Call :unZip.getCRC32 crc "%%n"
+                If !crc! NEQ !$crc32! Echo !$ME!: %%n has bad CRC: !$crc32! should be !crc!.>&2
+              )
             )
           )
         )
@@ -100,7 +125,7 @@ Echo Extracting "%%n".
   )
 )
 :break
-RD /S /Q "!$MY!"
+REM RD /S /Q "!$MY!"
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

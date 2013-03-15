@@ -33,15 +33,16 @@ Call :unzip "%~f0"
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:unZip <archive> [file list]
+:unZip [/CRC] <archive> [file list]
 :: :unZip
 :: Extracts files from an .ZIP archive.
-:: From the desk of Frank P. Westlake, 2013-03-09
+:: From the desk of Frank P. Westlake, 2013-03-15
 :: Compatibility identifier:           1
 :: Requires :zip with same compatibility indicator.
 :: Written on Windows 8.
 :: Requires CERTUTIL.exe
 :: Requires FSUTIL.exe write access.
+:: Does not verify CRC unless switch /CRC is included.
 SetLocal EnableExtensions EnableDelayedExpansion
 For /F "tokens=1 delims==" %%a in ('Set "$" 2^>NUL:') Do Set "%%a="
 Set "tm=%TIME: =%"
@@ -49,7 +50,9 @@ Set "$ME=%~n0"
 Set "$MY=%TEMP%\%~n0.%tm::=%%RANDOM%"
 MkDir "!$MY!"
 For %%f in (%*) Do (
-  If NOT DEFINED $zip ( Set "$zip=%%~ff"
+  If /I "%%~f" EQU "/CRC" (
+    Set "$checkCRC=true"
+  ) Else If NOT DEFINED $zip ( Set "$zip=%%~ff"
   ) Else (
     Set $fileList=!$fileList! "%%~f"
   )
@@ -101,7 +104,7 @@ For /F "usebackq tokens=1*" %%a in ("!$MY!\rev") Do (
         COPY /Y "!$MY!\hex" "!$MY!\%%g.work" >NUL:
         Echo;%%g >"!$MY!\t.hex"
         CertUtil -f -decodeHex "!$MY!\t.hex" "!$MY!\t" 12 >NUL: 2>&1 && (
-          For /F usebackq^ delims^=^  %%n in ("!$MY!\t") Do (
+          For /F usebackq^ delims^=^ EOL^= %%n in ("!$MY!\t") Do (
             fsUtil file setZeroData offset=0    length=!$p!  "!$MY!\%%g.work" >NUL:
             fsUtil file setZeroData offset=!$z! length=!$zl! "!$MY!\%%g.work" >NUL:
             MORE /E /S "!$MY!\%%g.work" >"!$MY!\%%g"
@@ -122,9 +125,11 @@ Echo Extracting "%%n".
             )
             ERASE "!$MY!\%%g*" "!$MY!\t*"
             If DEFINED $extracted (
-              Echo Extracted "%%n".
-              Call :unZip.getCRC32 crc "%%n"
-              If !crc! NEQ !$crc32! Echo !$ME!: %%n has bad CRC: !$crc32! should be !crc!.>&2
+              If DEFINED $checkCRC (
+                Echo Extracted "%%n".
+                Call :unZip.getCRC32 crc "%%n"
+                If !crc! NEQ !$crc32! Echo !$ME!: %%n has bad CRC: !$crc32! should be !crc!.>&2
+              )
             )
           )
         )
