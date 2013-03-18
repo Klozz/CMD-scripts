@@ -2,18 +2,20 @@
 Call :zip %*
 Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:: :zip
-:: Stores files into an .ZIP archive.
-:: From the desk of Frank P. Westlake, 2013-03-15
+:zip [/CRC] <zip file> [file list ....]
+:: Stores files into a .ZIP archive.
+:: From the desk of Frank P. Westlake, 2013-03-18
 :: Compatibility identifier:           1
 :: Requires :unZip with same compatibility indicator.
 :: Written on Windows 8.
 :: Requires CERTUTIL.exe
 :: Requires FSUTIL.exe write access.
 :: Does not store CRC unless switch /CRC is included.
-:zip [/CRC] <zip file> [file list ....]
 SetLocal EnableExtensions EnableDelayedExpansion
 For /F "tokens=1 delims==" %%a in ('Set "$" 2^>NUL:') Do Set "%%a="
+:: DEFAULTS
+Set "$checkCRC=true"
+:: END DEFAULTS
 Set "$tm=%TIME: =%"
 Set "$ME=%~n0"
 Set "$MY=%TEMP%\%~n0.%$tm::=%%RANDOM%"
@@ -24,9 +26,9 @@ Set /A "$entries=0"
 If "%~2" EQU "" ( Set "commandLine=%~1 *"
 )          Else ( Set "commandLine=%*" )
 For %%f in (%*) Do (
-  If /I "%%~f" EQU "/CRC" (
-    Set "$checkCRC=true"
-  ) Else If NOT DEFINED $zip ( Set "$zip=%%~f"
+         If /I "%%~f" EQU "/CRC" (  Set "$checkCRC=true"
+  ) Else If /I "%%~f" EQU "/-CRC" ( Set "$checkCRC="
+  ) Else If NOT DEFINED $zip (      Set "$zip=%%~f"
   ) Else (
     For /F "tokens=1 delims==" %%a in ('Set "@" 2^>NUL:') Do Set "%%a="
     Echo;Storing "%%~f" ...

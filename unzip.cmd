@@ -3,9 +3,8 @@ Call :unZip %*
 Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :unZip [/CRC] <archive> [file list]
-:: :unZip
 :: Extracts files from an .ZIP archive.
-:: From the desk of Frank P. Westlake, 2013-03-17
+:: From the desk of Frank P. Westlake, 2013-03-18
 :: Compatibility identifier:           1
 :: Requires :zip with same compatibility indicator.
 :: Written on Windows 8.
@@ -14,22 +13,21 @@ Goto :EOF
 :: Does not verify CRC unless switch /CRC is included.
 SetLocal EnableExtensions EnableDelayedExpansion
 For /F "tokens=1 delims==" %%a in ('Set "$" 2^>NUL:') Do Set "%%a="
+:: DEFAULTS
+Set "$checkCRC="
+:: END DEFAULTS
 Set "tm=%TIME: =%"
 Set "$ME=%~n0"
 Set "$MY=%TEMP%\%~n0.%tm::=%%RANDOM%"
 MkDir "!$MY!"
 For %%f in (%*) Do (
-  If /I "%%~f" EQU "/CRC" (
-    Set "$checkCRC=true"
-  ) Else If NOT DEFINED $zip ( Set "$zip=%%~ff"
-  ) Else (
-    Set $fileList=!$fileList! "%%~f"
+         If /I "%%~f" EQU "/CRC" (  Set "$checkCRC=true"
+  ) Else If /I "%%~f" EQU "/-CRC" ( Set "$checkCRC="
+  ) Else If NOT DEFINED $zip (      Set "$zip=%%~ff"
+  ) Else (                          Set  $fileList=!$fileList! "%%~f"
   )
 )
-If NOT EXIST "!$zip!" (
-  Echo Missing archive file.
-  Goto :EOF
-)>&2
+If NOT EXIST "!$zip!" (Echo Missing archive file. & Goto :EOF)>&2
 CertUtil -f -encodeHex "%$zip%" "!$MY!\zip.hex" 4 >NUL:
 Set "$self=0"
 If "%~f0" EQU "%~f1" (
