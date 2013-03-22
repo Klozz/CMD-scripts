@@ -186,47 +186,6 @@ For /L %%i in (1,1,%~2) Do (
 EndLocal & Set "%~1=%$%"
 Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:zip,filetime <variable name for result> <filename> [/c | /a | /w]
-SetLocal EnableExtensions EnableDelayedExpansion
-For /F "tokens=1 delims==" %%a in ('Set "$" 2^>NUL:') Do Set "%%a="
-Set "$name=%~f2"
-       If /I "%~3" EQU "/C" ( Set "$which=CreationDate"
-) Else If /I "%~3" EQU "/A" ( Set "$which=LastAccessed"
-) Else If /I "%~3" EQU "/W" ( Set "$which=LastModified"
-) Else                      ( Set "$which=LastModified" % REM Default %
-)
-For /F "tokens=1,2 delims==" %%a in (
-  'WMIC dataFile where name^="!$name:\=\\!" get !$which! /format:list'
-) Do (
-  If "%%~b" NEQ "" (
-    Set    "$=%%~b"
-    Set /A "$y=!$:~0,4!, $m=1!$:~4,2!-100, $d=1!$:~6,2!-100, $b=!$:~21!"
-    Set /A "$a=(14-$m)/12, $y=$y-1601-$a, $m=$m+12*$a-3"
-    Set /A "$ft=$d+(153*$m+2)/5+365*$y+$y/4-$y/100+$y/400+58"
-    Set /A "$s=1!$:~8,2! -100, $s=1!$:~10,2!-100+$s*60+$b*-1, $s=1!$:~12,2!-100+60*$s"
-    If $s LSS 0 (Set /A "$ft-=1, $s+=24*60*60")
-    Set /A "$ft=$ft*24*6*6"
-    Set    "$ft=!$ft!00"
-    For %%A in (0 1 2 3 4 5 6 7 8 9) Do Set "$ft=!$ft:%%A= %%A!"
-    For %%A in (!$ft!) Do Set "$tf=%%A !$tf!"
-    For %%A in (0 1 2 3 4 5 6 7 8 9) Do Set "$s=!$s:%%A= %%A!"
-    For %%A in (!$s!) Do Set "$ts=%%A!$ts!"
-    Set "$ft="
-    Set /A "$carry=0, $k=0"
-    For %%n in (!$tf!) Do (
-      For %%k in (!$k!) Do Set "$nB=!$ts:~%%k,1!"
-      Set /a "$n=%%n+$nB+$carry"
-      Set /A "$carry=0, $k+=1"
-      If !$n! GEQ 10 (Set /A "$n-=10, $carry=1")
-      Set "$ft=!$n!!$ft!"
-    )
-    If !$carry! EQU 1 Set "$ft=1!$ft!"
-    Set    "$ft=!$ft!!$:~15,6!0"
-  )
-)
-EndLocal & Set "%~1=%$ft%"
-Goto :EOF
-::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :unZip.setTable
 :zip.setTable
 Set /A "xor=0xEDB88320"
