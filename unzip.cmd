@@ -74,8 +74,8 @@ Echo;!$offsetList! | SORT>"!$MY!\offsetList"
 For /F "usebackq delims=" %%a in ("!$MY!\offsetList") Do Set "$offsetList=%%a"
 REM ERASE "!$MY!\offsetList" 1>NUL: 2>NUL:
 For %%o in (!$offsetList!) Do (
-  For /F "tokens=1-5 delims=:" %%e in ("%%o") Do (
-    Set /A "$fo=%%e+4, $xl=$zipSize2-$x, $dl=%%h, $nl=%%f, $storedCRC=%%i"
+  For /F "tokens=1-6 delims=:" %%e in ("%%o") Do (
+    Set /A "$fo=%%e+4, $xl=$zipSize2-$x, $dl=%%h, $nl=%%f, $storedCRC=%%i, $method=%%j"
     COPY /Y "!$MY!\hex" "!$MY!\%%g.work" >NUL:
     fsUtil file setZeroData offset=0     length=%%e   "!$MY!\%%g.work" >NUL:
     fsUtil file setZeroData offset=!$fo! length=!$xl! "!$MY!\%%g.work" >NUL:
@@ -94,6 +94,8 @@ For %%o in (!$offsetList!) Do (
           For %%F in (!$fileList!) Do (
             If "%%~n" EQU "%%~F" (
               COPY "!$MY!\%%n" "%%n">NUL:
+              If !$method! EQU 8 echo Expand "%%n"
+              Expand "%%n" \w\APPNOTE.TXT
               Set "$extracted=true"
             )
             REM ERASE "!$MY!\%%n"
@@ -191,11 +193,12 @@ Set /A "$p=56+$offset*2, $dl=$compressed*2"
 Set /A "$nl=$nameLength*2"
 Set /A "$test=0"^
 ,      "$test&=$gpFlag&0xFFFF" % REM No flags permitted in this configuration.       %^
-,      "$test&=$method&0xFFFF" % REM No compression permitted in this configuration. %
+,      "$test&=$method&0xFFF7" % REM No compression permitted in this configuration. %
+REM ,      "$test&=$method&0xFFFF" % REM No compression permitted in this configuration. %
 If !$test! EQU 0 (
   Set /A "$p=56+$offset*2, $dl=$compressed*2"
   Set /A "$nl=$nameLength*2"
-  Set "$offsetList=!$offsetList! !$p!:!$nl!:!$name!:!$dl!:!$storedCRC!"
+  Set "$offsetList=!$offsetList! !$p!:!$nl!:!$name!:!$dl!:!$storedCRC!:!$method!"
 ) Else (
   REM Echo;Skipping.
 )
