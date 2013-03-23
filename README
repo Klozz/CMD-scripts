@@ -20,6 +20,7 @@ ipv6.cmd              IPv4/IPv6 translation routines.
 MathToy.cmd           Commnd line math exercises.
 obfuscate.cmd         Renders a text file unreadable without the correct key. See also randomizeKey.cmd.
 parseArgs.cmd         Demonstrates a simply configured command line parsing routine. 
+PathEdit.cmd          Interactive PATH editor.
 PathList.cmd          Prints the path as a list.
 PrepMessage.cmd       Prepare an Internet message body with contained scripts.
 ProgBar.cmd           A algorithm which shows a graphic progress bar.
