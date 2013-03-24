@@ -282,11 +282,11 @@ Goto :EOF
 :Usage
 Echo Interactive PATH editor
 Echo;
-Echo %ME% [/L ^| /U ^| /M ^| /V]
+Echo %ME% [/L ^| /M ^| /U ^| /V]
 Echo;
 Echo  /L  Edit the local console's PATH.
-Echo  /U  Edit the user's Registry PATH.
 Echo  /M  Edit the machine (system^) Registry PATH.
+Echo  /U  Edit the user's Registry PATH.
 Echo  /V  Edit the volatile Registry PATH.
 Echo;
 Echo The default is to display the current path in each then exit.
