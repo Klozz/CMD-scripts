@@ -1,6 +1,6 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: PathEdit.cmd
-:: From the desk of Frank P. Westlake, 2013-03-24
+:: From the desk of Frank P. Westlake, 2013-03-24-a
 :: Interactive PATH editor. Edits the path in the machine, user, or
 :: volatile environment and merges the three into the console's PATH
 :: variable.
@@ -263,6 +263,10 @@ For %%a in (MACHINE USER VOLATILE) Do (
   Echo;
   Call :printList
 )
+Set "work=!PATH!"
+Set "caption=LOCAL"
+Echo;
+Call :printList
 Echo;
 Echo Usage **********************************
 Echo;
