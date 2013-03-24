@@ -1,6 +1,6 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: PathEdit.cmd
-:: From the desk of Frank P. Westlake, 2013-03-23
+:: From the desk of Frank P. Westlake, 2013-03-24
 :: Interactive PATH editor. Edits the path in the machine, user, or
 :: volatile environment and merges the three into the console's PATH
 :: variable.
@@ -15,19 +15,21 @@ Set "key="
 Set "Caption="
 Set "testAccess=true"
 
-       If /I "/U" EQU "%~1" ( Set "key=%user%"     & Set "Caption=USER"
+       If /I "/L" EQU "%~1" ( Set "work=!PATH!"    & Set "Caption=LOCAL" & Set "testAccess="
+) Else If /I "/U" EQU "%~1" ( Set "key=%user%"     & Set "Caption=USER"
 ) Else If /I "/M" EQU "%~1" ( Set "key=%machine%"  & Set "Caption=MACHINE"
 ) Else If /I "/V" EQU "%~1" ( Set "key=%volatile%" & Set "Caption=VOLATILE"
 ) Else If /I "/?" EQU "%~1" ( Call :Usage
                               EXIT /B 0
 )
-If DEFINED key ( Call :getPath work "%key%" PATH
-) Else         ( Call :printAll & EXIT /B 0
+       If DEFINED key                ( Call :getPath work "%key%" PATH
+) Else If /I "!Caption!" NEQ "LOCAL" ( Call :printAll & EXIT /B 0
+REM ) Else         ( Call :printAll & EXIT /B 0
 )
 Set "orig=!work!"
 :loop
 Call :printList
-If NOT DEFINED key EXIT /B 0
+If NOT DEFINED caption EXIT /B 0
 If DEFINED testAccess Call :testWriteAccess "%key%" && Set "testAccess=" || Goto :EOF
 Call :showCommands
 For /F "tokens=1 delims==" %%a in ('Set "#" 2^>NUL:') Do Set "%%a="
@@ -57,23 +59,25 @@ Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :Save
-Call :setPath "%key%" path "%work%"
-Set "work="
-For %%a in (MACHINE USER VOLATILE) Do (
-  Set "p="
-  Call :getPath p "!%%~a!" path
-  If DEFINED p (
-    Set "add=true"
-    For %%b in ("!work:;=" "!") Do (If /I "%%~b" EQU "!p!" Set "add=")
-    If DEFINED add (
-      If DEFINED work (
-        Set "work=!work!;!p!"
-      ) Else (
-        Set "work=!p!"
+If /I "!caption!" NEQ "LOCAL" (
+  Call :setPath "%key%" path "%work%"
+  Set "work="
+  For %%a in (MACHINE USER VOLATILE) Do (
+    Set "p="
+    Call :getPath p "!%%~a!" path
+    If DEFINED p (
+      Set "add=true"
+      For %%b in ("!work:;=" "!") Do (If /I "%%~b" EQU "!p!" Set "add=")
+      If DEFINED add (
+        If DEFINED work (
+          Set "work=!work!;!p!"
+        ) Else (
+          Set "work=!p!"
+        )
       )
     )
+    If "!work:~-1!" EQU ";" (Set "work=!work:~0,-1!")
   )
-  If "!work:~-1!" EQU ";" (Set "work=!work:~0,-1!")
 )
 EndLocal & Set "PATH=%work%"
 PATH
@@ -268,11 +272,12 @@ Goto :EOF
 :Usage
 Echo Interactive PATH editor
 Echo;
-Echo %ME% [/U ^| /M ^| /V]
+Echo %ME% [/L ^| /U ^| /M ^| /V]
 Echo;
-Echo  /U  Edit the user's PATH.
-Echo  /M  Edit the machine (system^) PATH.
-Echo  /V  Edit the volatile PATH.
+Echo  /L  Edit the local console's PATH.
+Echo  /U  Edit the user's Registry PATH.
+Echo  /M  Edit the machine (system^) Registry PATH.
+Echo  /V  Edit the volatile Registry PATH.
 Echo;
 Echo The default is to display the current path in each then exit.
 Goto :EOF
