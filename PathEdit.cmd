@@ -19,14 +19,12 @@ Set "testAccess=true"
 ) Else If /I "/U" EQU "%~1" ( Set "key=%user%"     & Set "Caption=USER"
 ) Else If /I "/M" EQU "%~1" ( Set "key=%machine%"  & Set "Caption=MACHINE"
 ) Else If /I "/V" EQU "%~1" ( Set "key=%volatile%" & Set "Caption=VOLATILE"
-) Else If /I "/?" EQU "%~1" ( Call :Usage
-                              EXIT /B 0
+) Else If /I "/?" EQU "%~1" ( Call :Usage          & EXIT /B 0
 )
-       If DEFINED key                ( Call :getPath work "%key%" PATH
+       If DEFINED key                ( Call :getRegistryVariable work "%key%" PATH
 ) Else If /I "!Caption!" NEQ "LOCAL" ( Call :printAll & EXIT /B 0
-REM ) Else         ( Call :printAll & EXIT /B 0
 )
-Set "orig=!work!"
+REM Set "orig=!work!"
 :loop
 Call :printList
 If NOT DEFINED caption EXIT /B 0
@@ -46,7 +44,7 @@ For /F %%a in ("%command%") Do Set "#=%%a"
 ) Else If /I "%#%" EQU "S" ( Goto :Save
 ) Else If /I "%#%" EQU "?" ( Call :help %command%
 )
-goto :loop
+Goto :loop
 For %%a in ("!work:;=" "!") Do (
   Choice /M "Remove '%%~a'?"
   If !ErrorLevel! EQU 2 (
@@ -60,11 +58,11 @@ Goto :EOF
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :Save
 If /I "!caption!" NEQ "LOCAL" (
-  Call :setPath "%key%" path "%work%"
+  Call :setRegistryVariable "%key%" path "%work%"
   Set "work="
   For %%a in (MACHINE USER VOLATILE) Do (
     Set "p="
-    Call :getPath p "!%%~a!" path
+    Call :getRegistryVariable p "!%%~a!" path
     If DEFINED p (
       Set "add=true"
       For %%b in ("!work:;=" "!") Do (If /I "%%~b" EQU "!p!" Set "add=")
@@ -82,6 +80,7 @@ If /I "!caption!" NEQ "LOCAL" (
 EndLocal & Set "PATH=%work%"
 PATH
 EXIT /B 0
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :Move
 For /F "tokens=2*" %%a in ("%*") Do (
@@ -147,6 +146,7 @@ If DEFINED #1 (
   )
 )
 Goto :EOF
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :Remove
 Set "removed="
@@ -178,6 +178,7 @@ If DEFINED work (
   )
 )
 Goto :EOF
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :showCommands
 Echo;
@@ -192,6 +193,7 @@ S=Save, ^
 ?=Help
 Echo;
 Goto :EOF
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :help
 Echo COMMAND INSTRUCTIONS
@@ -214,14 +216,15 @@ Echo     #= The line numbers and additional information may follow the command
 Echo        or they will be requested at a following prompt.
 Echo;
 Goto :EOF
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:getPath <var> <key> <value>
+:getRegistryVariable <var> <key> <value>
 Set "%~1="
 For /F "tokens=2*" %%a in ('reg QUERY "%~2" /V "%~3" 2^>NUL:') Do Set "%~1=%%b"
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:setPath <key> <value> <data>
+:setRegistryVariable <key> <value> <data>
 If "%~3" NEQ "" (
   reg ADD "%~1" /V "%~2" /D "%~3"
 ) Else (
@@ -239,6 +242,7 @@ reg ADD "%~1" /v "%now%" /D "%ME% testing write access." /F >NUL: && (
   EXIT /B 5
 )
 Goto :EOF
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :printlist
 Set "cap=%Caption% PATH ****************************************"
@@ -255,11 +259,12 @@ If DEFINED work (
   Echo   EMPTY
 )
 Goto :EOF
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :printAll
 For %%a in (MACHINE USER VOLATILE) Do (
   Set "caption=%%~a"
-  Call :getPath work "!%%~a!" path
+  Call :getRegistryVariable work "!%%~a!" path
   Echo;
   Call :printList
 )
@@ -272,6 +277,7 @@ Echo Usage **********************************
 Echo;
 Call :Usage
 Goto :EOF
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :Usage
 Echo Interactive PATH editor
