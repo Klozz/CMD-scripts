@@ -259,6 +259,7 @@ Echo        user, and volatile paths will be merged into this console's
 Echo        PATH variable.
 Echo     #= The line numbers and additional information may follow the command
 Echo        or they will be requested at a following prompt.
+PAUSE
 Echo;
 Goto :EOF
 
