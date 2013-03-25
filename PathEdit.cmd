@@ -1,6 +1,6 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: PathEdit.cmd
-:: From the desk of Frank P. Westlake, 2013-03-25
+:: From the desk of Frank P. Westlake, 2013-03-25-a
 :: Interactive PATH editor. Edits the path in the machine, user, or
 :: volatile environment and merges the three into the console's PATH
 :: variable.
@@ -8,12 +8,14 @@
 @Echo OFF
 SetLocal EnableExtensions EnableDelayedExpansion
 Set "ME=%~n0"
+Set "MESELF=%~f0"
 Set "user=HKCU\Environment"
 Set "machine=HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
 Set "volatile=HKCU\Volatile Environment"
 Set "key="
 Set "Caption="
 Set "testAccess=true"
+For /F %%a in ('COPY /Z "%~f0" NUL:') Do Set "CR=%%a"
 
        If /I "/L" EQU "%~1" ( Set "work=!PATH!"    & Set "Caption=LOCAL" & Set "testAccess="
 ) Else If /I "/U" EQU "%~1" ( Set "key=%user%"     & Set "Caption=USER"
@@ -259,8 +261,12 @@ Echo        user, and volatile paths will be merged into this console's
 Echo        PATH variable.
 Echo     #= The line numbers and additional information may follow the command
 Echo        or they will be requested at a following prompt.
-PAUSE
 Echo;
+For /F "delims=" %%p in ('PAUSE^<NUL:') Do (
+  Set /P "=%%~p"<NUL:
+  XCOPY /L /W "!MESELF!" "!MESELF!" >NUL: 2>&1
+  Set /P "=.!CR!                                                  !CR!"<NUL:
+)
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
