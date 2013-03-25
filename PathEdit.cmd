@@ -1,6 +1,6 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: PathEdit.cmd
-:: From the desk of Frank P. Westlake, 2013-03-24-a
+:: From the desk of Frank P. Westlake, 2013-03-25
 :: Interactive PATH editor. Edits the path in the machine, user, or
 :: volatile environment and merges the three into the console's PATH
 :: variable.
@@ -35,14 +35,15 @@ Set    "command="
 Set /P "command=ENTER: <command> [item number] "
 Echo;
 For /F %%a in ("%command%") Do Set "#=%%a"
-       If /I "%#%" EQU "A" ( Call :Add %command%
-) Else If /I "%#%" EQU "C" ( CLS
-) Else If /I "%#%" EQU "I" ( Call :Insert %command%
-) Else If /I "%#%" EQU "M" ( Call :Move %command%
-) Else If /I "%#%" EQU "Q" ( EXIT /B 0
-) Else If /I "%#%" EQU "R" ( Call :Remove %command%
-) Else If /I "%#%" EQU "S" ( Goto :Save
-) Else If /I "%#%" EQU "?" ( Call :help %command%
+       If /I "!#!" EQU "A" ( Call :Add !command!
+) Else If /I "!#!" EQU "C" ( CLS
+) Else If /I "!#!" EQU "E" ( Call :Edit !command!
+) Else If /I "!#!" EQU "I" ( Call :Insert !command!
+) Else If /I "!#!" EQU "M" ( Call :Move !command!
+) Else If /I "!#!" EQU "Q" ( EXIT /B 0
+) Else If /I "!#!" EQU "R" ( Call :Remove !command!
+) Else If /I "!#!" EQU "S" ( Goto :Save
+) Else If /I "!#!" EQU "?" ( Call :help !command!
 )
 Goto :loop
 For %%a in ("!work:;=" "!") Do (
@@ -56,7 +57,47 @@ For %%a in ("!work:;=" "!") Do (
 Goto :EOF
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:Edit
+If DEFINED work (
+  For /F "tokens=2*" %%a in ("%*") Do (
+    Set "#1=%%~a"
+    Set "#2=%%~b"
+  )
+         If !itemCount! LEQ 1 ( Set "#1=!itemCount!"
+  ) Else If NOT DEFINED #1    ( Set /P "#1=Remove which entry?: "
+  )
+  If DEFINED #1 (
+    Set "#="
+    Set /A "i=0"
+    For %%a in ("!work:;=" "!") Do (
+      Set /A "i+=1"
+      If !i! EQU !#1! (
+        If DEFINED #2 (
+          Set "#=!#!!#2!;"
+        ) Else (
+          Echo OLD=%%~a
+          Set "t=%%~a"
+          Set /P "t=NEW="
+          If DEFINED t (
+            Set "#=!#!!t!;"
+          ) Else (
+            Set "#=!#!%%~a;"
+          )
+          Echo;
+        )
+      ) Else (
+        Set "#=!#!%%~a;"
+      )
+    )
+    Set "work=!#!"
+    If "!work:~-1!" EQU ";" (Set "work=!work:~0,-1!")
+  )
+)
+Goto :EOF
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :Save
+Set "save=!work!"
 If /I "!caption!" NEQ "LOCAL" (
   Call :setRegistryVariable "%key%" path "%work%"
   Set "work="
@@ -76,6 +117,7 @@ If /I "!caption!" NEQ "LOCAL" (
     )
     If "!work:~-1!" EQU ";" (Set "work=!work:~0,-1!")
   )
+  Set "save=!work!"
 )
 EndLocal & Set "PATH=%work%"
 PATH
@@ -185,6 +227,7 @@ Echo;
 Echo COMMANDS: ^
 A=Add, ^
 C=Clear, ^
+E=Edit, ^
 I=Insert, ^
 M=Move, ^
 Q=Quit, ^
@@ -202,6 +245,8 @@ Echo;information as specified below.
 Echo A:     Add a new entry to the end.
 Echo        Ex: A C:\bin
 Echo C:     Clear the screen and print the PATH list.
+Echo E #:   Edit the entry.
+Echo        Ex: E 8 C:\Bin
 Echo I #:   Insert a new entry at the indicated position.
 Echo        Ex: I 1 C:\bin
 Echo M # #: Move the indicated entry to the indicated destination.
