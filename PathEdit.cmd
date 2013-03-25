@@ -15,7 +15,6 @@ Set "volatile=HKCU\Volatile Environment"
 Set "key="
 Set "Caption="
 Set "testAccess=true"
-For /F %%a in ('COPY /Z "%~f0" NUL:') Do Set "CR=%%a"
 
        If /I "/L" EQU "%~1" ( Set "work=!PATH!"    & Set "Caption=LOCAL" & Set "testAccess="
 ) Else If /I "/U" EQU "%~1" ( Set "key=%user%"     & Set "Caption=USER"
@@ -262,10 +261,17 @@ Echo        PATH variable.
 Echo     #= The line numbers and additional information may follow the command
 Echo        or they will be requested at a following prompt.
 Echo;
+Call :PAUSE
+Goto :EOF
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:PAUSE
 For /F "delims=" %%p in ('PAUSE^<NUL:') Do (
   Set /P "=%%~p"<NUL:
-  XCOPY /L /W "!MESELF!" "!MESELF!" >NUL: 2>&1
-  Set /P "=.!CR!                                                  !CR!"<NUL:
+  XCOPY /L /W "%~f0" "%~f0" >NUL: 2>&1
+  For /F %%q in ('COPY /Z "%~f0" NUL:') Do (
+    Set /P "=.%%q                                                  %%q"<NUL:
+  )
 )
 Goto :EOF
 
