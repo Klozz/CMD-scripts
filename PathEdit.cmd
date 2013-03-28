@@ -25,7 +25,6 @@ Set "testAccess=true"
        If DEFINED key                ( Call :getRegistryVariable work "%key%" PATH
 ) Else If /I "!Caption!" NEQ "LOCAL" ( Call :printAll & EXIT /B 0
 )
-REM Set "orig=!work!"
 :loop
 Call :printList
 If NOT DEFINED caption EXIT /B 0
