@@ -1,7 +1,7 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: filetime.cmd
 :: Calculates the 64-bit integer NTFS filetime of the file.
-:: WARNING: DO NOT USE AFTER 8406-02-09 04:31:39.9999999.
+:: WARNING: DO NOT USE AFTER 8406-02-09 14:29:18.9999999 local.
 :: From the desk of Frank P. Westlake, 2013-03-22
 :: Requires WMIC.exe.
 :: The purpose of this script is to distribute the subroutine and
@@ -30,7 +30,7 @@ If DEFINED $help (
   Echo;
   Echo If /ENV is not specified then the result will be printed.
   Echo;
-  Echo WARNING: DO NOT USE AFTER 8406-02-09 04:31:39.9999999.
+  Echo WARNING: DO NOT USE AFTER 8406-02-09 14:29:18.9999999 local.
   EXIT /B 0
 )
 :args
@@ -75,7 +75,7 @@ Goto :EOF
 :filetime <variable name for result> <filename> [/c | /a | /w]
 :: From the desk of Frank P. Westlake, 2013-03-22
 :: Calculates the 64-bit integer NTFS filetime of the file.
-:: WARNING: DO NOT USE AFTER 8406-02-09 04:31:39.9999999.
+:: WARNING: DO NOT USE AFTER 8406-02-09 14:29:18.9999999 local.
 :: A filetime of 0 indicates an error condition; check the ERRORLEVEL.
 :: PARAMETERS ('+'=required, '-'=optional):
 :: + %1 The name of the variable to set the filetime into.
