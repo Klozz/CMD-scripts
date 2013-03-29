@@ -66,7 +66,7 @@ If DEFINED $env (
 )
 If %ErrorLevel% NEQ 0 (
   For /F "delims=" %%a in ('net HELPMSG %ErrorLevel%') Do (
-    Echo;!$ME!: %%a
+    (Echo;!$ME!: %%a)>&2
   )
 )
 Goto :EOF
