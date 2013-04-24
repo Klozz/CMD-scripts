@@ -16,6 +16,7 @@ FormatNumber.cmd      A subroutine which formats numbers with commas.
 getVolumeRoot.cmd     Find the mount point of a volume by name.
 hed.cmd               An EDLIN style hex editor.
 hex.cmd               Prints a hex dump of a file or stream.
+hiddenArguments.cmd   Hide arguments in subroutine label.
 ipv6.cmd              IPv4/IPv6 translation routines.
 MathToy.cmd           Commnd line math exercises.
 obfuscate.cmd         Renders a text file unreadable without the correct key. See also randomizeKey.cmd.
