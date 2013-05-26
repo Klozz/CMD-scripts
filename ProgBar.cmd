@@ -7,17 +7,18 @@
 @ECHO OFF
 SETLOCAL ENABLEEXTENSIONS ENABLEDELAYEDEXPANSION
 Set /A size=1234, progress=0, item=0, last=0
+For /F %%a in ('copy /Z "%~f0" NUL:') Do Set "CR=%%a"
 Echo.Processing %size% items . . .
 :: Save current code page for restoration at completion.
 For /F "tokens=2 delims=:" %%a in ('CHCP') Do Set "CP=%%a"
 :: Using code page 437 for the character 'Û' in the progress bar.
 CHCP 437 >NUL:
 :: Progress bar caption.
-Echo. 10 20 30 40 50 60 70 80 90 100%%
+Set /p "=10 20 30 40 50 60 70 80 90 100%%!CR!"<NUL:
 :: 7-bit ASCII progress indicator.
-::Set "indicator=___"
+Set "indicator=___"
 :: 8-bit progress indicator (Û=DBh, the inverted space character).
-Set "indicator=ÛÛÛ"
+::Set "indicator=ÛÛÛ"
 ::Set "indicator=±±±"
 :: A demonstration loop.
 For /L %%i in (0 1 %size%) Do (
