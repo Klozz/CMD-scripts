@@ -33,6 +33,7 @@ rudeGraph.cmd         A rudimentary graph demonstration.
 toLowercase.cmd       A subroutine which converts a string to lower case.
 toTitlecase.cmd       A subroutine which converts a string to title case.
 toUppercase.cmd       A subroutine which converts a string to upper case.
+wifiGraphic.cmd       Shows a bar representing Wireless signal strength.
 Wrap_Demo.cmd         A console word wrap routine.
 xmlParse.cmd          Push and pull parse XML files.
 ZIP ARCHIVE RELATED SCRIPTS

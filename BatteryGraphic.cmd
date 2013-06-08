@@ -37,7 +37,7 @@ If NOT EXIST "%WMIC%" (
 )>&2
 If "%*" NEQ "/start" (
   START "BATTERY STATE" CMD /c%~f0 /start
-  Exit /B 0
+  Exit
   Goto :EOF
 )
 MODE CON lines=1 cols=107

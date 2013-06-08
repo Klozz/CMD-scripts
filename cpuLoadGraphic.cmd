@@ -26,7 +26,7 @@ If NOT EXIST "%SystemRoot%\System32\wbem\WMIC.exe" (
 )>&2
 If "%*" NEQ "/start" (
   START "CPU LOAD" CMD /c%~f0 /start
-  Exit /B 0
+  Exit
   Goto :EOF
 )
 CHCP %codePage% >NUL:
