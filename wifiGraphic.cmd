@@ -51,7 +51,7 @@ For /L %%i in (1,0,2) Do (
     )
   )
   For /L %%s in (!$Signal! 1 !$Signal!) Do (
-     Title WIFI %%s
+     Title WIFI %%s%%
            If %%s LEQ !low! ( Set "COLOR=!lowColor!"
     ) Else If %%s LEQ !mid! ( Set "COLOR=!midColor!"
     ) Else                  ( Set "COLOR=!highColor!"
