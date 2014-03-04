@@ -1,5 +1,5 @@
 :: BEGIN SCRIPT :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:: ed.cmd
+:: ed.cmd 
 :: An EDLIN style text editor.
 :: From the desk of Frank P. Westlake, 2012-04-12.
 :: Provides a quick and simple means of editing files from the command line.
