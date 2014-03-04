@@ -9,7 +9,7 @@ cpuLoadGraphic.cmd    Shows a bar representing CPU load.
 DecodeUID.cmd         Decode a UID.
 deZero.cmd            A subroutine which removes leading zeroes from a number.
 draw.cmd              Draw color ASCII art files.
-ed.cmd                An EDLIN style text editor.
+ed.cmd                An EDLIN style text editor. [REPAIRED]
 FileAge.cmd           Lists files with an age matching the given criteria.
 Filetime.cmd          Calculates the 64-bit integer NTFS filetime of the file.
 FormatNumber.cmd      A subroutine which formats numbers with commas.
